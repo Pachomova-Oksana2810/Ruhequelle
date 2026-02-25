@@ -1,0 +1,40 @@
+spring:
+  config:
+    import: optional:classpath:application-local.yml
+  application:
+    name: Ruhequelle
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:ruhequelle}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: update
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: koldakova.anna88@gmail.com
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: 8080
+
+# Уведомления при новой записи: Email + Telegram
+# Для Telegram: создайте бота через @BotFather, получите токен.
+# Chat ID: напишите боту @userinfobot или своему боту /start — он покажет ваш chat_id.
+notification:
+  email:
+    enabled: true
+    to: koldakova.anna88@gmail.com
+  telegram:
+    enabled: true
+    bot-token: ${TELEGRAM_BOT_TOKEN:}
+    chat-id: ${TELEGRAM_CHAT_ID:}

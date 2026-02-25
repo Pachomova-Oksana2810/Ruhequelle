@@ -1,0 +1,11 @@
+# Скопируйте в application-local.yml и заполните своими данными
+# application-local.yml в .gitignore — не попадёт в репозиторий
+
+spring:
+  mail:
+    password: ваш_пароль_приложения_gmail
+
+notification:
+  telegram:
+    bot-token: токен_от_BotFather
+    chat-id: "ваш_chat_id"
