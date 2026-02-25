@@ -1,0 +1,41 @@
+services:
+  mysql:
+    image: mysql:8
+    container_name: ruhequelle-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-ruhequelle}
+      MYSQL_DATABASE: ${DB_NAME:-ruhequelle}
+      MYSQL_USER: ${DB_USERNAME:-ruhequelle}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-ruhequelle}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ruhequelle-backend
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-ruhequelle}
+      DB_USERNAME: ${DB_USERNAME:-ruhequelle}
+      DB_PASSWORD: ${DB_PASSWORD:-ruhequelle}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+    ports:
+      - "8080:8080"
+
+volumes:
+  mysql_data:
