@@ -30,7 +30,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      DB_HOST: mysql
+      DB_HOST: mysql-ov1x
       DB_PORT: 3306
       DB_NAME: ${DB_NAME:-ruhequelle}
       DB_USERNAME: ${DB_USERNAME:-ruhequelle}
