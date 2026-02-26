@@ -15,7 +15,7 @@ curl http://localhost:8080/api/appointments/availability?start=2025-02-25&end=20
 ```
 
 Backend: http://localhost:8080  
-MySQL: localhost:3306 (user: ruhequelle, password: из .env)
+MySQL: localhost:3307 (внешний порт, внутри контейнера 3306; user: ruhequelle, password: из .env)
 
 ## Деплой на хостинг (Railway, Render, Fly.io и т.д.)
 
