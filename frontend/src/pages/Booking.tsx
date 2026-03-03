@@ -1,6 +1,7 @@
 import {useEffect, useMemo, useState} from "react";
 import axios from "axios";
 import {MASSAGE_OPTIONS} from "../data/massageTypes";
+import {API_URL} from "../api/config.ts";
 
 type Slot = {
   date: string;
@@ -68,7 +69,7 @@ export default function Booking() {
 
       try {
         const res = await axios.get(
-          `http://{API_URL}/api/appointments/availability?start=${startIso}&end=${endIso}`
+          `http://${API_URL}/api/appointments/availability?start=${startIso}&end=${endIso}`
         );
         setSlots(Array.isArray(res.data) ? res.data : []);
       } catch {
@@ -157,7 +158,7 @@ export default function Booking() {
     }
     setError("");
     try {
-      await axios.post("http://{API_URL}/api/appointments", {
+      await axios.post("http://${API_URL}/api/appointments", {
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
@@ -296,7 +297,7 @@ export default function Booking() {
                     className={`booking-calendar-day ${
                       selectedDate === cell.date ? "is-active" : ""
                     } ${!isAvailable ? "is-disabled" : ""}`}
-                    onClick={() => isAvailable && selectDate(cell.date)}
+                    onClick={() => isAvailable && cell.date && selectDate(cell.date)}
                     disabled={!isAvailable}
                   >
                     {cell.label}
