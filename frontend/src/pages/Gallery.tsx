@@ -119,16 +119,16 @@ export default function Gallery() {
 
       <div className="gallery-grid">
         <div className="gallery-item gallery-video">
-          <video src="/videos/angebot1.mp4" controls muted loop playsInline />
+          <video src="https://res.cloudinary.com/dxkyx2vsa/video/upload/v1772551143/angebot1_eugai2.mp4" controls muted loop playsInline />
         </div>
         <div className="gallery-item gallery-video">
-          <video src="/videos/anin1.mov" controls muted loop playsInline />
+          <video src="https://res.cloudinary.com/dxkyx2vsa/video/upload/v1772551191/anin1_bzdtmd.mov" controls muted loop playsInline />
         </div>
         <div className="gallery-item gallery-video">
-          <video src="/videos/video1.mp4" controls muted loop playsInline />
+          <video src="https://res.cloudinary.com/dxkyx2vsa/video/upload/v1772551184/video1_zgfuh3.mp4" controls muted loop playsInline />
         </div>
         <div className="gallery-item gallery-video">
-          <video src="/videos/massage1.mov" controls muted loop playsInline />
+          <video src="https://res.cloudinary.com/dxkyx2vsa/video/upload/v1772552867/IMG_2767_x7soom.mp4" controls muted loop playsInline />
         </div>
         <div className="gallery-item gallery-video">
           <video src="/videos/massage2.mov" controls muted loop playsInline />
