@@ -68,7 +68,7 @@ export default function Booking() {
 
       try {
         const res = await axios.get(
-          `http://localhost:8080/api/appointments/availability?start=${startIso}&end=${endIso}`
+          `http://{API_URL}/api/appointments/availability?start=${startIso}&end=${endIso}`
         );
         setSlots(Array.isArray(res.data) ? res.data : []);
       } catch {
@@ -157,7 +157,7 @@ export default function Booking() {
     }
     setError("");
     try {
-      await axios.post("http://localhost:8080/api/appointments", {
+      await axios.post("http://{API_URL}/api/appointments", {
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
