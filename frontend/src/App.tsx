@@ -9,6 +9,7 @@ import Booking from "./pages/Booking";
 import Gallery from "./pages/Gallery";
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
+import Admin from "./pages/Admin";
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
             <Route path="/appointment" element={<Booking />} />
             <Route path="/impressum" element={<Impressum />} />
             <Route path="/datenschutz" element={<Datenschutz />} />
+            <Route path="/admin" element={<Admin />} />
           </Routes>
         </main>
 

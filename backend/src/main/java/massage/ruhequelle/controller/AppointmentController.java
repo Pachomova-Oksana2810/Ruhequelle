@@ -2,14 +2,13 @@ package massage.ruhequelle.controller;
 
 import massage.ruhequelle.dto.SlotDto;
 import massage.ruhequelle.model.Appointment;
-import massage.ruhequelle.repository.AppointmentRepository;
+import massage.ruhequelle.model.BlockedSlot;
+import massage.ruhequelle.repository.BlockedSlotRepository;
 import massage.ruhequelle.service.AppointmentService;
 import massage.ruhequelle.service.NotificationService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
@@ -19,7 +18,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,10 +27,16 @@ public class AppointmentController {
 
     private final AppointmentService service;
     private final NotificationService notificationService;
+    private final BlockedSlotRepository blockedSlotRepository;
 
-    public AppointmentController(AppointmentService service, NotificationService notificationService) {
+    public AppointmentController(
+            AppointmentService service,
+            NotificationService notificationService,
+            BlockedSlotRepository blockedSlotRepository
+    ) {
         this.service = service;
         this.notificationService = notificationService;
+        this.blockedSlotRepository = blockedSlotRepository;
     }
 
     private final List<LocalTime> workingHours = List.of(
@@ -55,10 +59,15 @@ public class AppointmentController {
         LocalDate endDate = LocalDate.parse(end);
 
         List<Appointment> appointments = service.findBetween(startDate, endDate);
+        List<BlockedSlot> blockedSlots = blockedSlotRepository.findByDateBetween(startDate, endDate);
 
-        Map<LocalDate, List<LocalTime>>  busy = appointments.stream()
+        Map<LocalDate, List<LocalTime>> busy = appointments.stream()
                 .collect(Collectors.groupingBy(Appointment::getDate,
                         Collectors.mapping(Appointment::getTime, Collectors.toList())));
+
+        Map<LocalDate, List<LocalTime>> blocked = blockedSlots.stream()
+                .collect(Collectors.groupingBy(BlockedSlot::getDate,
+                        Collectors.mapping(BlockedSlot::getTime, Collectors.toList())));
 
         List<SlotDto> result = new ArrayList<>();
 
@@ -66,6 +75,9 @@ public class AppointmentController {
         while (!current.isAfter(endDate)) {
             for (LocalTime time : workingHours) {
                 boolean available = !busy
+                        .getOrDefault(current, List.of())
+                        .contains(time)
+                        && !blocked
                         .getOrDefault(current, List.of())
                         .contains(time);
 
@@ -83,8 +95,11 @@ public class AppointmentController {
 
     @PostMapping
     public ResponseEntity<?> save(@RequestBody Appointment appointment) {
-        if (service.isSlotTaken(appointment.getDate(), appointment.getTime())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Slot is already taken");
+        if (!service.isBookable(appointment.getDate(), appointment.getTime())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Slot is not available");
+        }
+        if (appointment.getStatus() == null || appointment.getStatus().isBlank()) {
+            appointment.setStatus("confirmed");
         }
         Appointment saved = service.save(appointment);
         notificationService.notifyNewBooking(saved);
