@@ -36,14 +36,17 @@ public class AppointmentController {
     }
 
     private final List<LocalTime> workingHours = List.of(
-            LocalTime.of(9,0),
-            LocalTime.of(10,0),
-            LocalTime.of(11,0),
+            LocalTime.of(8, 15),
+            LocalTime.of(9, 0),
+            LocalTime.of(10, 0),
+            LocalTime.of(11, 0),
+            LocalTime.of(12, 0),
             LocalTime.of(13, 0),
             LocalTime.of(14, 0),
             LocalTime.of(15, 0),
             LocalTime.of(16, 0),
-            LocalTime.of(17, 0)
+            LocalTime.of(17, 0),
+            LocalTime.of(18, 0)
     );
 
     @GetMapping("/availability")

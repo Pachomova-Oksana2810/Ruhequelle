@@ -27,7 +27,7 @@ function generateFallbackSlots(): Slot[] {
     const date = new Date(today);
     date.setDate(today.getDate() + d);
     const dateStr = toLocalIsoDate(date);
-    const times = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
+    const times = ["08:15", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
     times.forEach((time) => slots.push({date: dateStr, time, available: true}));
   }
   return slots;
