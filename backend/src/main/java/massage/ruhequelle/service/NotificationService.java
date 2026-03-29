@@ -56,8 +56,6 @@ public class NotificationService {
     }
 
     public void sendReminder(Appointment appointment) {
-        String firstName = appointment.getFirstName() != null ? appointment.getFirstName() : "";
-        String lastName = appointment.getLastName() != null ? appointment.getLastName() : "";
         String dateStr = appointment.getDate().format(DATE_FMT);
         String timeStr = appointment.getTime().format(TIME_FMT);
         String treatment = appointment.getMassageType() != null ? appointment.getMassageType() : "—";
@@ -65,7 +63,7 @@ public class NotificationService {
         try {
             String subject = "Erinnerung: Ihr Massagetermin morgen – Ruhequelle";
             String body =
-                    "Guten Tag " + firstName + " " + lastName + ",\n\n"
+                    "Guten Tag \n\n"
                             + "wir möchten Sie an Ihren Massagetermin morgen erinnern:\n\n"
                             + "Datum: " + dateStr + "\n"
                             + "Uhrzeit: " + timeStr + " Uhr\n"
@@ -101,9 +99,7 @@ public class NotificationService {
             if (telegramEnabled && hasTelegram) {
                 try {
                     String ownerMessage = String.format(
-                            "⏰ Erinnerung gesendet an %s %s für morgen %s um %s Uhr – %s",
-                            firstName,
-                            lastName,
+                            "⏰ Erinnerung gesendet für morgen %s um %s Uhr – %s",
                             dateStr,
                             timeStr,
                             treatment
@@ -130,12 +126,7 @@ public class NotificationService {
                 );
             }
 
-            log.info(
-                    "Reminder processed for appointment id={} ({} {})",
-                    appointment.getId(),
-                    firstName,
-                    lastName
-            );
+            log.info("Reminder processed for appointment id={}", appointment.getId());
         } catch (Exception e) {
             log.error(
                     "Unexpected error in sendReminder for appointment id={}: {}",

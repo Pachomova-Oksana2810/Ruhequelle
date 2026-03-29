@@ -84,7 +84,7 @@ const services = [
     id: "koerperhaltung",
     image: "/images/Service/Körperhaltung ung Bewegungsoptim.png",
     title: "Körperhaltung und Bewegungsoptimierung",
-    price: "50 €",
+    price: "60 €",
     tagline: "Ein aufrechter Körper. Freie Bewegung. Neue Lebensqualität.",
     description:
       "Falsche Haltung, Bewegungsmangel und einseitige Belastungen führen oft zu Verspannungen, Schmerzen und einem eingeschränkten Bewegungsmuster. Unsere ganzheitliche Behandlung zur Körperhaltung und Bewegungsoptimierung unterstützt Sie dabei, Ihre natürliche Aufrichtung zurückzugewinnen und sich wieder mit Leichtigkeit zu bewegen.",
