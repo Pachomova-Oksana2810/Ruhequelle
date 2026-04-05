@@ -5,6 +5,7 @@ import massage.ruhequelle.model.Appointment;
 import massage.ruhequelle.model.BlockedSlot;
 import massage.ruhequelle.repository.BlockedSlotRepository;
 import massage.ruhequelle.service.AppointmentService;
+import massage.ruhequelle.service.BrevoService;
 import massage.ruhequelle.service.NotificationService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -21,15 +23,38 @@ public class AdminController {
     private final AppointmentService appointmentService;
     private final BlockedSlotRepository blockedSlotRepository;
     private final NotificationService notificationService;
+    private final BrevoService brevoService;
 
     public AdminController(
             AppointmentService appointmentService,
             BlockedSlotRepository blockedSlotRepository,
-            NotificationService notificationService
+            NotificationService notificationService,
+            BrevoService brevoService
     ) {
         this.appointmentService = appointmentService;
         this.blockedSlotRepository = blockedSlotRepository;
         this.notificationService = notificationService;
+        this.brevoService = brevoService;
+    }
+
+    @GetMapping("/test/sms")
+    public ResponseEntity<Map<String, String>> testSms(@RequestParam String phone) {
+        String err = brevoService.sendSmsOrError(phone, "Test SMS von Ruhequelle");
+        if (err != null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("status", "error", "message", err));
+        }
+        return ResponseEntity.ok(Map.of("status", "sent", "to", phone));
+    }
+
+    @GetMapping("/test/email")
+    public ResponseEntity<Map<String, String>> testEmail(@RequestParam String email) {
+        String err = brevoService.sendEmailOrError(email, "Test", "Test Email", "Test von Ruhequelle");
+        if (err != null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("status", "error", "message", err));
+        }
+        return ResponseEntity.ok(Map.of("status", "sent", "to", email));
     }
 
     @GetMapping("/appointments")

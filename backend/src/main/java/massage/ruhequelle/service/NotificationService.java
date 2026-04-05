@@ -4,8 +4,6 @@ import massage.ruhequelle.model.Appointment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -24,7 +22,7 @@ public class NotificationService {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
-    private final JavaMailSender mailSender;
+    private final BrevoService brevoService;
     private final RestTemplate restTemplate;
 
     @Value("${notification.email.enabled:true}")
@@ -42,8 +40,8 @@ public class NotificationService {
     @Value("${notification.telegram.chat-id:}")
     private String telegramChatId;
 
-    public NotificationService(JavaMailSender mailSender, RestTemplate restTemplate) {
-        this.mailSender = mailSender;
+    public NotificationService(BrevoService brevoService, RestTemplate restTemplate) {
+        this.brevoService = brevoService;
         this.restTemplate = restTemplate;
     }
 
@@ -75,24 +73,24 @@ public class NotificationService {
 
             String clientEmail = appointment.getEmail();
             if (emailEnabled && clientEmail != null && !clientEmail.isBlank()) {
-                try {
-                    sendReminderEmailToClient(clientEmail, subject, body);
-                    log.info(
-                            "Reminder email sent to client {} for appointment id={}",
-                            clientEmail,
-                            appointment.getId()
-                    );
-                } catch (Exception e) {
-                    log.error(
-                            "Failed to send reminder email for appointment id={}: {}",
-                            appointment.getId(),
-                            e.getMessage(),
-                            e
-                    );
-                }
+                String fn = appointment.getFirstName() != null ? appointment.getFirstName().trim() : "";
+                String ln = appointment.getLastName() != null ? appointment.getLastName().trim() : "";
+                String clientName = (fn + " " + ln).trim();
+                brevoService.sendEmail(
+                        clientEmail,
+                        clientName,
+                        "Erinnerung: Ihr Massagetermin morgen - Ruhequelle",
+                        body
+                );
             } else if (emailEnabled) {
                 log.debug("Reminder email skipped: empty client email for appointment id={}", appointment.getId());
             }
+
+            brevoService.sendSms(
+                    appointment.getPhone(),
+                    "Erinnerung Ruhequelle: Morgen " + dateStr + " um " + timeStr + " Uhr - " + treatment + ". "
+                            + "Neustadt 23A, Koblenz. Bei Fragen bitte melden."
+            );
 
             boolean hasTelegram = telegramBotToken != null && !telegramBotToken.isBlank()
                     && telegramChatId != null && !telegramChatId.isBlank();
@@ -144,11 +142,30 @@ public class NotificationService {
                 appointment.getFirstName(), appointment.getLastName(),
                 appointment.getDate(), appointment.getTime());
 
+        String dateStr = appointment.getDate().format(DATE_FMT);
+        String timeStr = appointment.getTime().format(TIME_FMT);
+        String massageType = appointment.getMassageType() != null ? appointment.getMassageType() : "—";
+        String firstName = appointment.getFirstName() != null ? appointment.getFirstName() : "";
+
         if (emailEnabled) {
-            sendEmail(subject, body);
+            brevoService.sendEmail(
+                    emailTo,
+                    "Ruhequelle",
+                    "Neue Buchung: " + appointment.getFirstName() + " " + appointment.getLastName(),
+                    body
+            );
         } else {
             log.debug("Email notifications disabled");
         }
+
+        brevoService.sendSms(
+                appointment.getPhone(),
+                "Hallo " + firstName + "! Ihr Termin bei Ruhequelle wurde bestaetigt. "
+                        + "Datum: " + dateStr + " um " + timeStr + " Uhr. "
+                        + "Behandlung: " + massageType + ". "
+                        + "Adresse: Neustadt 23A, 56068 Koblenz."
+        );
+
         boolean hasTelegram = telegramBotToken != null && !telegramBotToken.isBlank()
                 && telegramChatId != null && !telegramChatId.isBlank();
         if (telegramEnabled && hasTelegram) {
@@ -175,29 +192,6 @@ public class NotificationService {
                 a.getDate().format(DATE_FMT),
                 a.getTime().format(TIME_FMT)
         );
-    }
-
-    private void sendEmail(String subject, String body) {
-        try {
-            SimpleMailMessage msg = new SimpleMailMessage();
-            msg.setTo(emailTo);
-            msg.setSubject(subject);
-            msg.setText(body);
-            msg.setFrom(emailTo);
-            mailSender.send(msg);
-            log.info("Booking notification email sent to {}", emailTo);
-        } catch (Exception e) {
-            log.error("Failed to send booking email: {}. Check MAIL_PASSWORD (use Gmail App Password if 2FA enabled)", e.getMessage(), e);
-        }
-    }
-
-    private void sendReminderEmailToClient(String clientEmail, String subject, String body) {
-        SimpleMailMessage msg = new SimpleMailMessage();
-        msg.setTo(clientEmail);
-        msg.setSubject(subject);
-        msg.setText(body);
-        msg.setFrom(emailTo);
-        mailSender.send(msg);
     }
 
     private void postTelegramMessageToOwner(String text) {

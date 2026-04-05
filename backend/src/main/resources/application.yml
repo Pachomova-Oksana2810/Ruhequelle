@@ -40,3 +40,7 @@ notification:
     enabled: true
     bot-token: ${TELEGRAM_BOT_TOKEN:}
     chat-id: ${TELEGRAM_CHAT_ID:}
+
+brevo:
+  api-key: ${BREVO_API_KEY:}
+  sms-from: ${BREVO_SMS_FROM:Ruhequelle}
