@@ -6,6 +6,8 @@ import massage.ruhequelle.model.BlockedSlot;
 import massage.ruhequelle.repository.BlockedSlotRepository;
 import massage.ruhequelle.service.AppointmentService;
 import massage.ruhequelle.service.NotificationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/appointments")
 public class AppointmentController {
 
+    private static final Logger log = LoggerFactory.getLogger(AppointmentController.class);
 
     private final AppointmentService service;
     private final NotificationService notificationService;
@@ -102,7 +105,16 @@ public class AppointmentController {
             appointment.setStatus("confirmed");
         }
         Appointment saved = service.save(appointment);
-        notificationService.notifyNewBooking(saved);
+        try {
+            notificationService.notifyNewBooking(saved);
+        } catch (Exception e) {
+            log.error(
+                    "Booking saved (id={}) but notifications failed: {}",
+                    saved.getId(),
+                    e.getMessage(),
+                    e
+            );
+        }
         return ResponseEntity.ok().build();
     }
 

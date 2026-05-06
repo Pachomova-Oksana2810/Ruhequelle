@@ -40,6 +40,32 @@ function toLocalIsoDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/** Spring ProblemDetails, Validation-API oder plain text — für lesbare Fehlermeldungen */
+function formatApiErrorBody(data: unknown): string {
+  if (data == null || data === "") return "";
+  if (typeof data === "string") return data;
+  if (typeof data !== "object") return String(data);
+  const o = data as Record<string, unknown>;
+  if (typeof o.detail === "string" && o.detail) return o.detail;
+  if (typeof o.message === "string" && o.message) return o.message;
+  if (typeof o.error === "string" && o.error) return o.error;
+  if (typeof o.title === "string" && o.title) return o.title;
+  const errors = o.errors;
+  if (errors && typeof errors === "object" && !Array.isArray(errors)) {
+    const parts = Object.entries(errors as Record<string, unknown>).flatMap(([field, val]) => {
+      if (Array.isArray(val)) return val.map((m) => `${field}: ${m}`);
+      if (typeof val === "string") return [`${field}: ${val}`];
+      return [];
+    });
+    if (parts.length) return parts.join("; ");
+  }
+  try {
+    return JSON.stringify(data);
+  } catch {
+    return "Unbekannter Fehler";
+  }
+}
+
 export default function Booking() {
   const [form, setForm] = useState<FormData>({
     firstName: "",
@@ -178,9 +204,15 @@ export default function Booking() {
         } else if (err.response?.status === 409) {
           setError("Slot ist bereits belegt. Bitte anderes Datum oder Zeit wählen.");
         } else if (err.response?.status === 400) {
-          setError("Ungültige Daten. Bitte prüfen.");
+          const detail = formatApiErrorBody(err.response?.data);
+          setError(detail || "Ungültige Daten. Bitte prüfen.");
         } else {
-          setError(`Fehler: ${err.response?.data ?? err.message}`);
+          const detail = formatApiErrorBody(err.response?.data);
+          setError(
+            detail
+              ? `Fehler: ${detail}`
+              : err.message || "Ein Fehler ist beim Buchen aufgetreten."
+          );
         }
       } else {
         setError("Ein unerwarteter Fehler ist aufgetreten.");
