@@ -19,14 +19,27 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     private final AppointmentRepository repository;
     private final BlockedSlotRepository blockedSlotRepository;
+    private final GoogleCalendarService googleCalendarService;
 
-    public AppointmentServiceImpl(AppointmentRepository repository, BlockedSlotRepository blockedSlotRepository) {
+    public AppointmentServiceImpl(
+            AppointmentRepository repository,
+            BlockedSlotRepository blockedSlotRepository,
+            GoogleCalendarService googleCalendarService
+    ) {
         this.repository = repository;
         this.blockedSlotRepository = blockedSlotRepository;
+        this.googleCalendarService = googleCalendarService;
     }
+
     @Override
     public Appointment save(Appointment appointment) {
-        return repository.save(appointment);
+        Appointment saved = repository.save(appointment);
+        String eventId = googleCalendarService.createEvent(saved);
+        if (eventId != null) {
+            saved.setGoogleCalendarEventId(eventId);
+            saved = repository.save(saved);
+        }
+        return saved;
     }
 
     @Override
@@ -73,9 +86,9 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public void deleteById(Long id) {
-        if (!repository.existsById(id)) {
-            throw new ResponseStatusException(NOT_FOUND, "Appointment not found");
-        }
+        Appointment appointment = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Appointment not found"));
+        googleCalendarService.deleteEvent(appointment.getGoogleCalendarEventId());
         repository.deleteById(id);
     }
 
@@ -114,6 +127,8 @@ public class AppointmentServiceImpl implements AppointmentService {
         if (patch.getStatus() != null) {
             existing.setStatus(patch.getStatus());
         }
-        return repository.save(existing);
+        Appointment updated = repository.save(existing);
+        googleCalendarService.updateEvent(updated.getGoogleCalendarEventId(), updated);
+        return updated;
     }
 }

@@ -44,3 +44,10 @@ notification:
 brevo:
   api-key: ${BREVO_API_KEY:}
   sms-from: ${BREVO_SMS_FROM:Ruhequelle}
+
+google:
+  calendar:
+    id: ${GOOGLE_CALENDAR_ID:}
+  service:
+    account:
+      json: ${GOOGLE_SERVICE_ACCOUNT_JSON:}

@@ -34,4 +34,7 @@ public class Appointment {
     /** e.g. confirmed, cancelled — used in admin list */
     @Column(length = 64)
     private String status = "confirmed";
+
+    @Column(name = "google_calendar_event_id", length = 256)
+    private String googleCalendarEventId;
 }

@@ -6,6 +6,7 @@ import massage.ruhequelle.model.BlockedSlot;
 import massage.ruhequelle.repository.BlockedSlotRepository;
 import massage.ruhequelle.service.AppointmentService;
 import massage.ruhequelle.service.BrevoService;
+import massage.ruhequelle.service.GoogleCalendarService;
 import massage.ruhequelle.service.NotificationService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
@@ -24,17 +27,20 @@ public class AdminController {
     private final BlockedSlotRepository blockedSlotRepository;
     private final NotificationService notificationService;
     private final BrevoService brevoService;
+    private final GoogleCalendarService googleCalendarService;
 
     public AdminController(
             AppointmentService appointmentService,
             BlockedSlotRepository blockedSlotRepository,
             NotificationService notificationService,
-            BrevoService brevoService
+            BrevoService brevoService,
+            GoogleCalendarService googleCalendarService
     ) {
         this.appointmentService = appointmentService;
         this.blockedSlotRepository = blockedSlotRepository;
         this.notificationService = notificationService;
         this.brevoService = brevoService;
+        this.googleCalendarService = googleCalendarService;
     }
 
     @GetMapping("/test/sms")
@@ -45,6 +51,29 @@ public class AdminController {
                     .body(Map.of("status", "error", "message", err));
         }
         return ResponseEntity.ok(Map.of("status", "sent", "to", phone));
+    }
+
+    @GetMapping("/test/calendar")
+    public ResponseEntity<Map<String, String>> testCalendar() {
+        Appointment test = new Appointment();
+        test.setFirstName("Test");
+        test.setLastName("Ruhequelle");
+        test.setEmail("test@ruhequelle.de");
+        test.setPhone("+49000000000");
+        test.setMassageType("Testmassage");
+        test.setDate(LocalDate.now().plusDays(1));
+        test.setTime(LocalTime.of(10, 0));
+        test.setStatus("confirmed");
+
+        String eventId = googleCalendarService.createEvent(test);
+        if (eventId == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "status", "error",
+                            "message", "Calendar event was not created (check logs and GOOGLE_* env vars)"
+                    ));
+        }
+        return ResponseEntity.ok(Map.of("status", "created", "eventId", eventId));
     }
 
     @GetMapping("/test/email")
