@@ -172,6 +172,10 @@ public class GoogleCalendarService {
         if (event == null || "cancelled".equalsIgnoreCase(event.getStatus())) {
             return;
         }
+        String summary = event.getSummary();
+        if (!shouldBlockFromCalendarEvent(summary)) {
+            return;
+        }
         EventDateTime start = event.getStart();
         if (start == null) {
             return;
@@ -200,7 +204,6 @@ public class GoogleCalendarService {
             return;
         }
 
-        String summary = event.getSummary() != null ? event.getSummary() : "Busy";
         BlockedSlot slot = new BlockedSlot();
         slot.setDate(date);
         slot.setTime(time);
@@ -230,6 +233,14 @@ public class GoogleCalendarService {
             webhookChannelId = null;
             webhookResourceId = null;
         }
+    }
+
+    private static boolean shouldBlockFromCalendarEvent(String summary) {
+        if (summary == null) {
+            return false;
+        }
+        String lower = summary.toLowerCase();
+        return lower.contains("#block") || lower.contains("#massage");
     }
 
     private static LocalTime roundToNearestWorkingHour(LocalTime time) {
