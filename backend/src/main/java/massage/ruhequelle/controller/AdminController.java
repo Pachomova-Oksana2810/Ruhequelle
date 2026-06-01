@@ -76,6 +76,15 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("status", "created", "eventId", eventId));
     }
 
+    @GetMapping("/test/calendar-sync")
+    public ResponseEntity<Map<String, String>> testCalendarSync() {
+        googleCalendarService.syncCalendarEvents();
+        return ResponseEntity.ok(Map.of(
+                "status", "synced",
+                "message", "Calendar sync triggered"
+        ));
+    }
+
     @GetMapping("/test/email")
     public ResponseEntity<Map<String, String>> testEmail(@RequestParam String email) {
         String err = brevoService.sendEmailOrError(email, "Test", "Test Email", "Test von Ruhequelle");
