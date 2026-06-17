@@ -10,5 +10,5 @@ export const MASSAGE_OPTIONS = [
   { id: "lifting-antiage", label: "Lifting + Anti-Age-Pflege" },
   { id: "fermenttherapie", label: "Fermenttherapie" },
   { id: "gesicht-mikrostrom", label: "Gesichtsbehandlung: Gesichtsmassage + Mikrostrom + Maske + Serum" },
-  { id: "aktion", label: "Aktion" },
+  { id: "rueckenpflege", label: "Intensive Rückenpflege" },
 ] as const;

@@ -26,52 +26,57 @@ export default function Home() {
 
         <article className="action-card">
           <div className="action-image">
-            <img src="/images/8-maerz.png" alt="Aktion zum 8. März" />
+            <img
+              src="/images/rueckenpflege.png"
+              alt="Intensive Rückenpflege mit Beinmassage"
+            />
           </div>
           <div className="action-content">
             <h3 className="action-title">
-              <span className="action-icon">🌸</span> Aktion zum 8. März
+              <span className="action-icon">✨</span> Neue Behandlung – Intensive
+              Rückenpflege
             </h3>
             <p className="action-tagline">
-              Ein exklusives Schönheitsritual – nur für kurze Zeit
+              Zeit für Ihre Haut. Zeit für sich.
             </p>
             <p>
-              Zum 8. März – ein exklusives Schönheitsritual, das Sie so noch
-              nicht erlebt haben.
+              Die Haut am Rücken benötigt ebenso regelmäßige Pflege wie die
+              Gesichtshaut. Dennoch wird dieser Bereich häufig vernachlässigt.
             </p>
             <p>
-              Dies ist keine gewöhnliche Behandlung, sondern ein sorgfältig
-              abgestimmtes Zusammenspiel von Techniken, bei dem jede die Wirkung
-              der anderen verstärkt:
+              Diese intensive Rückenpflege unterstützt die Reinigung der Haut,
+              verbessert ihr Erscheinungsbild und sorgt für ein angenehmes
+              Hautgefühl.
             </p>
+            <p>Die Behandlung umfasst:</p>
             <ul className="action-list">
+              <li>Reinigung der Rückenhaut</li>
+              <li>Peeling für ein glatteres und ebenmäßigeres Hautbild</li>
               <li>
-                Sanfte Mikrostrom-Impulse aktivieren die Zellen und schenken
-                neue Spannkraft.
+                Eine individuell auf die Bedürfnisse der Haut abgestimmte Maske
               </li>
-              <li>
-                Eine intensive Gesichts- und Dekolleté-Massage löst Spannungen,
-                modelliert die Konturen und führt in tiefe Entspannung.
-              </li>
-              <li>
-                Eine modellierende Alginatmaske in Kombination mit einem
-                hochwirksamen Serum fixiert den Effekt – die Haut wirkt
-                straffer, glatter und sichtbar strahlender.
-              </li>
+              <li>Abschließende Pflege</li>
             </ul>
             <p>
-              Nach der Behandlung fühlen Sie Leichtigkeit, Frische und innere
-              Harmonie.
+              Während die Maske einwirkt, genießen Sie eine Beinmassage, die zur
+              Entspannung beiträgt und die Behandlung besonders angenehm macht.
+            </p>
+            <p>
+              Nach der Behandlung wirkt die Haut gepflegter, glatter und
+              frischer. Gleichzeitig sorgt die Kombination aus Hautpflege und
+              Massage für Wohlbefinden und Entspannung.
             </p>
             <div className="action-meta">
               <span>
-                <span className="action-meta-icon">📅</span> Nur im März
-                verfügbar
+                <span className="action-meta-icon">⏱</span> Dauer: 60 Minuten
               </span>
               <span>
-                <span className="action-meta-icon">👥</span> Begrenzte Plätze
+                <span className="action-meta-icon">💶</span> Preis: 75 €
               </span>
             </div>
+            <p>
+              Terminvereinbarung telefonisch oder per Direktnachricht.
+            </p>
             <Link className="pill-button" to="/appointment">
               Jetzt Termin buchen
             </Link>

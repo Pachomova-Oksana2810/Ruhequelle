@@ -2,6 +2,27 @@ import {Link} from "react-router-dom";
 
 const services = [
   {
+    id: "rueckenpflege",
+    image: "/images/rueckenpflege.png",
+    title: "Intensive Rückenpflege",
+    price: "75 €",
+    tagline: "Zeit für Ihre Haut. Zeit für sich.",
+    description:
+      "Die Haut am Rücken benötigt ebenso regelmäßige Pflege wie die Gesichtshaut. Dennoch wird dieser Bereich häufig vernachlässigt. Diese intensive Rückenpflege unterstützt die Reinigung der Haut, verbessert ihr Erscheinungsbild und sorgt für ein angenehmes Hautgefühl.",
+    treatmentDetails: [
+      "Reinigung der Rückenhaut",
+      "Peeling für ein glatteres und ebenmäßigeres Hautbild",
+      "Eine individuell auf die Bedürfnisse der Haut abgestimmte Maske",
+      "Abschließende Pflege",
+      "Beinmassage während die Maske einwirkt",
+    ],
+    treatmentDetailsLabel: "Die Behandlung umfasst",
+    target:
+      "Nach der Behandlung wirkt die Haut gepflegter, glatter und frischer. Gleichzeitig sorgt die Kombination aus Hautpflege und Massage für Wohlbefinden und Entspannung. Terminvereinbarung telefonisch oder per Direktnachricht.",
+    duration: "60 Minuten",
+    recommendation: "Ideal als Auszeit für Rücken und Beine.",
+  },
+  {
     id: "wellness",
     image: "/images/Service/Wellness massage.png",
     title: "Wellness-Massage",

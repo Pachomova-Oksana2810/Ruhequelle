@@ -241,7 +241,10 @@ export default function Booking() {
             </p>
           </div>
           <div className="booking-hero-image">
-            <img src="/images/8-maerz.png" alt="Aktion zum 8. März" />
+            <img
+              src="/images/rueckenpflege.png"
+              alt="Intensive Rückenpflege mit Beinmassage"
+            />
           </div>
         </div>
 
