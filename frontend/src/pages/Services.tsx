@@ -3,7 +3,7 @@ import {Link} from "react-router-dom";
 const services = [
   {
     id: "rueckenpflege",
-    image: "/images/rueckenpflege.png",
+    image: "/images/rueckenpflege-service.png",
     title: "Intensive Rückenpflege",
     price: "75 €",
     tagline: "Zeit für Ihre Haut. Zeit für sich.",
