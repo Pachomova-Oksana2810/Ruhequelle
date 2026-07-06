@@ -23,3 +23,5 @@ services:
         sync: false
       - key: APP_WEBHOOK_URL
         sync: false
+      - key: CLOUDINARY_URL
+        sync: false

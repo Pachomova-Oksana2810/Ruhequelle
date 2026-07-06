@@ -1,4 +1,6 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
+import {fetchPublicGallery} from "../api/cms";
+import type {GalleryItemDto} from "../types/cms";
 
 const STORAGE_KEY = "ruhequelle-reviews";
 
@@ -42,8 +44,8 @@ function loadReviews(): Review[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      const parsed = JSON.parse(stored);
-      return Array.isArray(parsed) ? parsed : [];
+      const parsed: unknown = JSON.parse(stored);
+      return Array.isArray(parsed) ? (parsed as Review[]) : [];
     }
   } catch {
     // ignore
@@ -60,6 +62,9 @@ function saveReviews(reviews: Review[]) {
 }
 
 export default function Gallery() {
+  const [galleryItems, setGalleryItems] = useState<GalleryItemDto[]>([]);
+  const [galleryLoading, setGalleryLoading] = useState(true);
+  const [galleryError, setGalleryError] = useState("");
   const [userReviews, setUserReviews] = useState<Review[]>(loadReviews);
   const [form, setForm] = useState({
     name: "",
@@ -69,6 +74,31 @@ export default function Gallery() {
   });
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setGalleryLoading(true);
+      setGalleryError("");
+      try {
+        const items = await fetchPublicGallery();
+        if (!cancelled) {
+          setGalleryItems(items);
+        }
+      } catch {
+        if (!cancelled) {
+          setGalleryError("Galerie konnte nicht geladen werden.");
+        }
+      } finally {
+        if (!cancelled) {
+          setGalleryLoading(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const allReviews = [...initialReviews, ...userReviews];
 
@@ -117,26 +147,29 @@ export default function Gallery() {
         </p>
       </div>
 
-      <div className="gallery-grid">
-        <div className="gallery-item gallery-video">
-          <video src="https://res.cloudinary.com/dxkyx2vsa/video/upload/v1772551143/angebot1_eugai2.mp4" controls muted loop playsInline />
+      {galleryLoading && <p className="gallery-loading">Galerie wird geladen…</p>}
+      {galleryError && <p className="gallery-error">{galleryError}</p>}
+      {!galleryLoading && !galleryError && galleryItems.length === 0 && (
+        <p className="gallery-empty">Derzeit sind keine Galerie-Einträge vorhanden.</p>
+      )}
+
+      {galleryItems.length > 0 && (
+        <div className="gallery-grid">
+          {galleryItems.map((item) => (
+            <div
+              key={item.id}
+              className={`gallery-item${item.type === "VIDEO" ? " gallery-video" : ""}`}
+            >
+              {item.type === "VIDEO" ? (
+                <video src={item.url} controls muted loop playsInline />
+              ) : (
+                <img src={item.url} alt={item.caption ?? "Galerie"} />
+              )}
+              {item.caption && <p className="gallery-caption">{item.caption}</p>}
+            </div>
+          ))}
         </div>
-        <div className="gallery-item gallery-video">
-          <video src="https://res.cloudinary.com/dxkyx2vsa/video/upload/v1772551191/anin1_bzdtmd.mov" controls muted loop playsInline />
-        </div>
-        <div className="gallery-item gallery-video">
-          <video src="https://res.cloudinary.com/dxkyx2vsa/video/upload/v1772551184/video1_zgfuh3.mp4" controls muted loop playsInline />
-        </div>
-        <div className="gallery-item gallery-video">
-          <video src="https://res.cloudinary.com/dxkyx2vsa/video/upload/v1772552867/IMG_2767_x7soom.mp4" controls muted loop playsInline />
-        </div>
-        <div className="gallery-item gallery-video">
-          <video src="/videos/massage2.mov" controls muted loop playsInline />
-        </div>
-        <div className="gallery-item gallery-video">
-          <video src="/videos/skin_cleansing.mov" controls muted loop playsInline />
-        </div>
-      </div>
+      )}
 
       <div className="reviews">
         <h3>Kundenstimmen</h3>

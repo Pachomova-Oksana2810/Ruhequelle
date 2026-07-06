@@ -1,6 +1,42 @@
+import {useEffect, useState} from "react";
 import {Link} from "react-router-dom";
+import {fetchPublicNews} from "../api/cms";
+import type {NewsItem} from "../types/cms";
+
+function formatNewsDate(iso: string): string {
+  if (!iso) {
+    return "";
+  }
+  try {
+    return new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
 
 export default function Home() {
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setNewsLoading(true);
+      const items = await fetchPublicNews();
+      if (!cancelled) {
+        setNews(items);
+        setNewsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <>
       <section className="page hero-page">
@@ -19,6 +55,41 @@ export default function Home() {
           <img src="/images/home.png" alt="Ruhequelle – Raum für Gesundheit und Erholung" />
         </div>
       </section>
+
+      {newsLoading && (
+        <section className="page news-page">
+          <p className="news-loading">Nachrichten werden geladen…</p>
+        </section>
+      )}
+
+      {!newsLoading && news.length > 0 && (
+        <section className="page news-page">
+          <h2>Aktuelles</h2>
+          <p className="news-subtitle">Neuigkeiten aus der Praxis</p>
+          <div className="news-list">
+            {news.map((item) => (
+              <article key={item.id} className="action-card news-card">
+                {item.imageUrl && (
+                  <div className="action-image">
+                    <img src={item.imageUrl} alt={item.title} />
+                  </div>
+                )}
+                <div className="action-content">
+                  <h3 className="action-title">{item.title}</h3>
+                  {item.publishedAt && (
+                    <p className="news-date">{formatNewsDate(item.publishedAt)}</p>
+                  )}
+                  <div className="news-content">
+                    {item.content.split("\n").map((paragraph, index) =>
+                      paragraph.trim() ? <p key={index}>{paragraph}</p> : null
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="page actions-page">
         <h2>Aktuelle Aktionen & Specials</h2>

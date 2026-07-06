@@ -1,8 +1,17 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {MASSAGE_OPTIONS} from "../data/massageTypes";
 import {API_URL} from "../api/config";
+import {
+  ADMIN_STORAGE_KEY,
+  getAdminHeaders,
+  getStoredPassword,
+  passwordHeaders,
+} from "../lib/adminAuth";
+import AdminNewsTab from "../components/admin/AdminNewsTab";
+import AdminServicesTab from "../components/admin/AdminServicesTab";
+import AdminGalleryTab from "../components/admin/AdminGalleryTab";
 
-const ADMIN_STORAGE_KEY = "ruhequelle_admin_password";
+type AdminTab = "termine" | "nachrichten" | "behandlungen" | "galerie";
 
 const SLOT_TIMES = [
   "08:15",
@@ -69,21 +78,6 @@ function normalizeTimeDisplay(time: string): string {
   return time;
 }
 
-function passwordHeaders(password: string): HeadersInit {
-  return {
-    "Content-Type": "application/json",
-    "X-Admin-Password": password,
-  };
-}
-
-function getStoredPassword(): string {
-  return sessionStorage.getItem(ADMIN_STORAGE_KEY) ?? "";
-}
-
-function getAdminHeaders(): HeadersInit {
-  return passwordHeaders(getStoredPassword());
-}
-
 function parseAppointments(raw: unknown): AppointmentRow[] {
   if (!Array.isArray(raw)) {
     return [];
@@ -137,6 +131,7 @@ function parseBlocked(raw: unknown): BlockedRow[] {
 
 export default function Admin() {
   const [unlocked, setUnlocked] = useState(false);
+  const [activeTab, setActiveTab] = useState<AdminTab>("termine");
   const [passwordInput, setPasswordInput] = useState("");
   const [loginError, setLoginError] = useState("");
 
@@ -543,23 +538,59 @@ export default function Admin() {
   return (
     <section className="page admin-page">
       <div className="admin-toolbar">
-        <h1 className="admin-title">Terminverwaltung</h1>
+        <h1 className="admin-title">Admin</h1>
         <div className="admin-toolbar-actions">
-          <button type="button" className="admin-btn-ghost" onClick={() => void loadDashboard()}>
-            Aktualisieren
-          </button>
-          <button type="button" className="admin-btn-ghost" onClick={() => void fetchPublicSlots()}>
-            Slots neu laden
-          </button>
+          {activeTab === "termine" && (
+            <>
+              <button type="button" className="admin-btn-ghost" onClick={() => void loadDashboard()}>
+                Aktualisieren
+              </button>
+              <button type="button" className="admin-btn-ghost" onClick={() => void fetchPublicSlots()}>
+                Slots neu laden
+              </button>
+            </>
+          )}
           <button type="button" className="admin-btn-muted" onClick={logout}>
             Abmelden
           </button>
         </div>
       </div>
 
-      {listError && <p className="admin-error">{listError}</p>}
+      <nav className="admin-tabs" aria-label="Admin-Bereiche">
+        <button
+          type="button"
+          className={`admin-tab${activeTab === "termine" ? " admin-tab-active" : ""}`}
+          onClick={() => setActiveTab("termine")}
+        >
+          Termine
+        </button>
+        <button
+          type="button"
+          className={`admin-tab${activeTab === "nachrichten" ? " admin-tab-active" : ""}`}
+          onClick={() => setActiveTab("nachrichten")}
+        >
+          Nachrichten
+        </button>
+        <button
+          type="button"
+          className={`admin-tab${activeTab === "behandlungen" ? " admin-tab-active" : ""}`}
+          onClick={() => setActiveTab("behandlungen")}
+        >
+          Behandlungen
+        </button>
+        <button
+          type="button"
+          className={`admin-tab${activeTab === "galerie" ? " admin-tab-active" : ""}`}
+          onClick={() => setActiveTab("galerie")}
+        >
+          Galerie
+        </button>
+      </nav>
+
+      {listError && activeTab === "termine" && <p className="admin-error">{listError}</p>}
       {actionMessage && <p className="admin-success">{actionMessage}</p>}
 
+      {activeTab === "termine" && (
       <div className="admin-grid">
         <div className="admin-card admin-card-wide">
           <h2>Alle Buchungen</h2>
@@ -784,8 +815,28 @@ export default function Admin() {
           </div>
         </div>
       </div>
+      )}
 
-      {editing !== null && (
+      {activeTab === "nachrichten" && (
+        <AdminNewsTab
+          onLogout={logout}
+          onMessage={setActionMessage}
+        />
+      )}
+      {activeTab === "behandlungen" && (
+        <AdminServicesTab
+          onLogout={logout}
+          onMessage={setActionMessage}
+        />
+      )}
+      {activeTab === "galerie" && (
+        <AdminGalleryTab
+          onLogout={logout}
+          onMessage={setActionMessage}
+        />
+      )}
+
+      {editing !== null && activeTab === "termine" && (
         <div className="admin-modal-backdrop" role="presentation" onClick={() => setEditing(null)}>
           <div
             className="admin-modal"

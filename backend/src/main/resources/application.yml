@@ -55,3 +55,6 @@ google:
 app:
   webhook:
     url: ${APP_WEBHOOK_URL:https://ruhequelle-backend.onrender.com}
+
+cloudinary:
+  url: ${CLOUDINARY_URL:}
