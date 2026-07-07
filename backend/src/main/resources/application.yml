@@ -3,6 +3,9 @@ spring:
     import: optional:classpath:application-local.yml
   application:
     name: Ruhequelle
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
   datasource:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC
     username: ${DB_USER}
