@@ -16,4 +16,6 @@ public interface BlockedSlotRepository extends JpaRepository<BlockedSlot, Long> 
     List<BlockedSlot> findByDateBetween(LocalDate start, LocalDate end);
 
     List<BlockedSlot> findAllByOrderByDateAscTimeAsc();
+
+    List<BlockedSlot> findByReasonStartingWith(String prefix);
 }

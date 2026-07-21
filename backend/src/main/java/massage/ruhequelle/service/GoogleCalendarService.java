@@ -19,6 +19,7 @@ import massage.ruhequelle.repository.AppointmentRepository;
 import massage.ruhequelle.repository.BlockedSlotRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -30,7 +31,10 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -139,6 +143,20 @@ public class GoogleCalendarService {
         }
     }
 
+    @Scheduled(fixedDelay = 300000) // every 5 minutes
+    public void scheduledSync() {
+        if (calendarClient == null) {
+            return;
+        }
+        try {
+            log.debug("Running scheduled Google Calendar sync");
+            syncCalendarEvents();
+            log.info("Scheduled Google Calendar sync completed");
+        } catch (Exception e) {
+            log.error("Scheduled Google Calendar sync failed", e);
+        }
+    }
+
     public void syncCalendarEvents() {
         if (calendarClient == null) {
             log.warn("Google Calendar sync skipped: client not initialized");
@@ -147,6 +165,8 @@ public class GoogleCalendarService {
         try {
             ZonedDateTime rangeStart = ZonedDateTime.now(BERLIN);
             ZonedDateTime rangeEnd = rangeStart.plusDays(SYNC_DAYS_AHEAD);
+            LocalDate syncFrom = rangeStart.toLocalDate();
+            LocalDate syncTo = rangeEnd.toLocalDate();
 
             Events events = calendarClient.events()
                     .list(calendarId)
@@ -156,64 +176,97 @@ public class GoogleCalendarService {
                     .setOrderBy("startTime")
                     .execute();
 
-            if (events.getItems() == null) {
-                return;
+            List<Event> items = events.getItems() != null ? events.getItems() : List.of();
+            Set<SlotKey> activeGoogleSlots = new HashSet<>();
+
+            for (Event event : items) {
+                SlotKey key = resolveBlockSlotKey(event);
+                if (key != null) {
+                    activeGoogleSlots.add(key);
+                    syncEventToBlockedSlot(event, key);
+                }
             }
 
-            for (Event event : events.getItems()) {
-                syncEventToBlockedSlot(event);
-            }
+            removeStaleGoogleCalendarBlockedSlots(activeGoogleSlots, syncFrom, syncTo);
         } catch (Exception e) {
             log.error("Google Calendar sync failed", e);
         }
     }
 
-    private void syncEventToBlockedSlot(Event event) {
-        if (event == null || "cancelled".equalsIgnoreCase(event.getStatus())) {
+    private void syncEventToBlockedSlot(Event event, SlotKey key) {
+        if (appointmentRepository.existsByDateAndTime(key.date(), key.time())) {
             return;
         }
-        String summary = event.getSummary();
-        if (!shouldBlockFromCalendarEvent(summary)) {
-            return;
-        }
-        EventDateTime start = event.getStart();
-        if (start == null) {
+        if (blockedSlotRepository.existsByDateAndTime(key.date(), key.time())) {
             return;
         }
 
-        LocalDate date;
-        LocalTime time;
+        BlockedSlot slot = new BlockedSlot();
+        slot.setDate(key.date());
+        slot.setTime(key.time());
+        slot.setReason("Google Calendar: " + event.getSummary());
+
+        try {
+            blockedSlotRepository.save(slot);
+            log.info("Slot blocked from Google Calendar: {} {}", key.date(), key.time());
+        } catch (DataIntegrityViolationException e) {
+            log.debug("Slot already blocked (concurrent sync): {} {}", key.date(), key.time());
+        }
+    }
+
+    private void removeStaleGoogleCalendarBlockedSlots(
+            Set<SlotKey> activeGoogleSlots,
+            LocalDate syncFrom,
+            LocalDate syncTo
+    ) {
+        List<BlockedSlot> googleSlots = blockedSlotRepository.findByReasonStartingWith("Google Calendar:");
+        for (BlockedSlot slot : googleSlots) {
+            if (slot.getDate().isBefore(syncFrom) || slot.getDate().isAfter(syncTo)) {
+                continue;
+            }
+            SlotKey key = new SlotKey(slot.getDate(), slot.getTime());
+            if (!activeGoogleSlots.contains(key)) {
+                blockedSlotRepository.delete(slot);
+                log.info("Removed stale Google Calendar blocked slot: {} {}", slot.getDate(), slot.getTime());
+            }
+        }
+    }
+
+    private static SlotKey resolveBlockSlotKey(Event event) {
+        if (event == null || "cancelled".equalsIgnoreCase(event.getStatus())) {
+            return null;
+        }
+        if (!shouldBlockFromCalendarEvent(event.getSummary())) {
+            return null;
+        }
+        EventDateTime start = event.getStart();
+        if (start == null) {
+            return null;
+        }
+
         if (start.getDateTime() != null) {
             ZonedDateTime startZdt = ZonedDateTime.ofInstant(
                     Instant.ofEpochMilli(start.getDateTime().getValue()),
                     BERLIN
             );
-            date = startZdt.toLocalDate();
-            time = roundToNearestWorkingHour(startZdt.toLocalTime());
-        } else if (start.getDate() != null) {
-            date = LocalDate.parse(start.getDate().toStringRfc3339());
-            time = roundToNearestWorkingHour(LocalTime.of(9, 0));
-        } else {
-            return;
+            return new SlotKey(
+                    startZdt.toLocalDate(),
+                    roundToNearestWorkingHour(startZdt.toLocalTime())
+            );
         }
-
-        if (appointmentRepository.existsByDateAndTime(date, time)) {
-            return;
+        if (start.getDate() != null) {
+            return new SlotKey(
+                    LocalDate.parse(start.getDate().toStringRfc3339()),
+                    roundToNearestWorkingHour(LocalTime.of(9, 0))
+            );
         }
-        if (blockedSlotRepository.existsByDateAndTime(date, time)) {
-            return;
-        }
+        return null;
+    }
 
-        BlockedSlot slot = new BlockedSlot();
-        slot.setDate(date);
-        slot.setTime(time);
-        slot.setReason("Google Calendar: " + summary);
-
-        try {
-            blockedSlotRepository.save(slot);
-            log.info("Slot blocked from Google Calendar: {} {}", date, time);
-        } catch (DataIntegrityViolationException e) {
-            log.debug("Slot already blocked (concurrent sync): {} {}", date, time);
+    private record SlotKey(LocalDate date, LocalTime time) {
+        SlotKey {
+            Objects.requireNonNull(date);
+            Objects.requireNonNull(time);
         }
     }
 
