@@ -76,18 +76,20 @@ public class AppointmentController {
 
         LocalDate current = startDate;
         while (!current.isAfter(endDate)) {
-            for (LocalTime time : workingHours) {
-                boolean available = !busy
-                        .getOrDefault(current, List.of())
-                        .contains(time)
-                        && !blocked
-                        .getOrDefault(current, List.of())
-                        .contains(time);
+            if (current.getDayOfWeek() != java.time.DayOfWeek.SUNDAY) {
+                for (LocalTime time : workingHours) {
+                    boolean available = !busy
+                            .getOrDefault(current, List.of())
+                            .contains(time)
+                            && !blocked
+                            .getOrDefault(current, List.of())
+                            .contains(time);
 
-                result.add(new SlotDto(
-                        current.toString(),
-                        time.format(DateTimeFormatter.ofPattern("HH:mm")),
-                        available));
+                    result.add(new SlotDto(
+                            current.toString(),
+                            time.format(DateTimeFormatter.ofPattern("HH:mm")),
+                            available));
+                }
             }
             current = current.plusDays(1);
         }
