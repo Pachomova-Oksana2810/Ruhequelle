@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -180,11 +179,7 @@ public class GoogleCalendarService {
             Set<SlotKey> activeGoogleSlots = new HashSet<>();
 
             for (Event event : items) {
-                SlotKey key = resolveBlockSlotKey(event);
-                if (key != null) {
-                    activeGoogleSlots.add(key);
-                    syncEventToBlockedSlot(event, key);
-                }
+                activeGoogleSlots.addAll(syncEventToBlockedSlot(event));
             }
 
             removeStaleGoogleCalendarBlockedSlots(activeGoogleSlots, syncFrom, syncTo);
@@ -193,24 +188,73 @@ public class GoogleCalendarService {
         }
     }
 
-    private void syncEventToBlockedSlot(Event event, SlotKey key) {
-        if (appointmentRepository.existsByDateAndTime(key.date(), key.time())) {
+    private Set<SlotKey> syncEventToBlockedSlot(Event event) {
+        if (event == null || "cancelled".equalsIgnoreCase(event.getStatus())) {
+            return Set.of();
+        }
+        if (!shouldBlockFromCalendarEvent(event.getSummary())) {
+            return Set.of();
+        }
+
+        EventDateTime start = event.getStart();
+        EventDateTime end = event.getEnd();
+        if (start == null) {
+            return Set.of();
+        }
+
+        LocalDate date;
+        LocalTime startTime;
+        LocalTime endTime;
+
+        if (start.getDateTime() != null) {
+            ZonedDateTime startZdt = ZonedDateTime.ofInstant(
+                    Instant.ofEpochMilli(start.getDateTime().getValue()), BERLIN);
+            date = startZdt.toLocalDate();
+            startTime = startZdt.toLocalTime();
+
+            if (end != null && end.getDateTime() != null) {
+                ZonedDateTime endZdt = ZonedDateTime.ofInstant(
+                        Instant.ofEpochMilli(end.getDateTime().getValue()), BERLIN);
+                endTime = endZdt.toLocalTime();
+            } else {
+                endTime = startTime.plusHours(1);
+            }
+        } else if (start.getDate() != null) {
+            date = LocalDate.parse(start.getDate().toStringRfc3339());
+            startTime = LocalTime.of(0, 0);
+            endTime = LocalTime.of(23, 59);
+        } else {
+            return Set.of();
+        }
+
+        Set<SlotKey> keys = new HashSet<>();
+        for (LocalTime workingHour : WORKING_HOURS) {
+            if (!workingHour.isBefore(startTime) && workingHour.isBefore(endTime)) {
+                blockSlotIfFree(date, workingHour, event.getSummary());
+                keys.add(new SlotKey(date, workingHour));
+            }
+        }
+        return keys;
+    }
+
+    private void blockSlotIfFree(LocalDate date, LocalTime time, String summary) {
+        if (appointmentRepository.existsByDateAndTime(date, time)) {
             return;
         }
-        if (blockedSlotRepository.existsByDateAndTime(key.date(), key.time())) {
+        if (blockedSlotRepository.existsByDateAndTime(date, time)) {
             return;
         }
 
         BlockedSlot slot = new BlockedSlot();
-        slot.setDate(key.date());
-        slot.setTime(key.time());
-        slot.setReason("Google Calendar: " + event.getSummary());
+        slot.setDate(date);
+        slot.setTime(time);
+        slot.setReason("Google Calendar: " + summary);
 
         try {
             blockedSlotRepository.save(slot);
-            log.info("Slot blocked from Google Calendar: {} {}", key.date(), key.time());
+            log.info("Slot blocked from Google Calendar: {} {}", date, time);
         } catch (DataIntegrityViolationException e) {
-            log.debug("Slot already blocked (concurrent sync): {} {}", key.date(), key.time());
+            log.debug("Slot already blocked (concurrent): {} {}", date, time);
         }
     }
 
@@ -230,37 +274,6 @@ public class GoogleCalendarService {
                 log.info("Removed stale Google Calendar blocked slot: {} {}", slot.getDate(), slot.getTime());
             }
         }
-    }
-
-    private static SlotKey resolveBlockSlotKey(Event event) {
-        if (event == null || "cancelled".equalsIgnoreCase(event.getStatus())) {
-            return null;
-        }
-        if (!shouldBlockFromCalendarEvent(event.getSummary())) {
-            return null;
-        }
-        EventDateTime start = event.getStart();
-        if (start == null) {
-            return null;
-        }
-
-        if (start.getDateTime() != null) {
-            ZonedDateTime startZdt = ZonedDateTime.ofInstant(
-                    Instant.ofEpochMilli(start.getDateTime().getValue()),
-                    BERLIN
-            );
-            return new SlotKey(
-                    startZdt.toLocalDate(),
-                    roundToNearestWorkingHour(startZdt.toLocalTime())
-            );
-        }
-        if (start.getDate() != null) {
-            return new SlotKey(
-                    LocalDate.parse(start.getDate().toStringRfc3339()),
-                    roundToNearestWorkingHour(LocalTime.of(9, 0))
-            );
-        }
-        return null;
     }
 
     private record SlotKey(LocalDate date, LocalTime time) {
@@ -294,19 +307,6 @@ public class GoogleCalendarService {
         }
         String lower = summary.toLowerCase();
         return lower.contains("#block") || lower.contains("#massage");
-    }
-
-    private static LocalTime roundToNearestWorkingHour(LocalTime time) {
-        LocalTime nearest = WORKING_HOURS.getFirst();
-        long minDiff = Math.abs(Duration.between(time, nearest).toMinutes());
-        for (LocalTime slot : WORKING_HOURS) {
-            long diff = Math.abs(Duration.between(time, slot).toMinutes());
-            if (diff < minDiff) {
-                minDiff = diff;
-                nearest = slot;
-            }
-        }
-        return nearest;
     }
 
     public String createEvent(Appointment appointment) {
