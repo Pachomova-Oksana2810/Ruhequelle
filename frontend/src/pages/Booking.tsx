@@ -1,4 +1,5 @@
 import {useEffect, useMemo, useState} from "react";
+import {Link} from "react-router-dom";
 import axios from "axios";
 import {MASSAGE_OPTIONS} from "../data/massageTypes";
 import {API_URL} from "../api/config.ts";
@@ -82,6 +83,7 @@ export default function Booking() {
   const [success, setSuccess] = useState("");
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<string>("");
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
   useEffect(() => {
     const fetchSlots = async () => {
@@ -182,6 +184,10 @@ export default function Booking() {
       setError("Bitte Datum und Uhrzeit wählen");
       return;
     }
+    if (!privacyAccepted) {
+      setError("Bitte der Datenschutzerklärung zustimmen");
+      return;
+    }
     setError("");
     try {
       await axios.post(`${API_URL}/api/appointments`, {
@@ -197,6 +203,7 @@ export default function Booking() {
       setForm({firstName: "", lastName: "", email: "", phone: "", massageType: "", date: "", time: ""});
       setSelectedDate("");
       setSelectedTime("");
+      setPrivacyAccepted(false);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         if (err.code === "ERR_NETWORK" || !err.response) {
@@ -380,6 +387,21 @@ export default function Booking() {
           )}
 
           <div className="booking-submit-row">
+            <label className="booking-privacy-consent">
+              <input
+                type="checkbox"
+                checked={privacyAccepted}
+                onChange={(e) => setPrivacyAccepted(e.target.checked)}
+              />
+              <span>
+                Ich habe die{" "}
+                <Link to="/datenschutz" target="_blank" rel="noopener noreferrer">
+                  Datenschutzerklärung
+                </Link>{" "}
+                gelesen und stimme der Verarbeitung meiner Daten zur
+                Terminbuchung zu. *
+              </span>
+            </label>
             <button
               className="booking-submit-button"
               onClick={submit}
@@ -390,7 +412,8 @@ export default function Booking() {
                 !form.phone ||
                 !form.massageType ||
                 !form.date ||
-                !form.time
+                !form.time ||
+                !privacyAccepted
               }
             >
               Termin bestätigen
