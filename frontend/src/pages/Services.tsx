@@ -2,11 +2,13 @@ import {useEffect, useState} from "react";
 import {Link} from "react-router-dom";
 import {fetchPublicServices} from "../api/cms";
 import type {CmsService} from "../types/cms";
+import {useScrollAnimation} from "../hooks/useScrollAnimation";
 
 export default function Services() {
   const [services, setServices] = useState<CmsService[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const pageRef = useScrollAnimation<HTMLElement>();
 
   useEffect(() => {
     let cancelled = false;
@@ -34,7 +36,10 @@ export default function Services() {
   }, []);
 
   return (
-    <section className="page services-page">
+    <section
+      ref={pageRef}
+      className="page services-page scroll-animate section-watermark"
+    >
       <h2>Massagearten und Preise</h2>
       <p className="services-intro">
         Wählen Sie aus unserem Angebot an Wellnessmassagen und Kosmetik
@@ -53,7 +58,11 @@ export default function Services() {
           <article key={s.id} className="service-card">
             {s.imageUrl && (
               <div className="service-image">
-                <img src={encodeURI(s.imageUrl)} alt={s.name} />
+                <img
+                  src={encodeURI(s.imageUrl)}
+                  alt={s.name}
+                  loading="lazy"
+                />
               </div>
             )}
             <div className="service-content">

@@ -3,6 +3,7 @@ import {Link} from "react-router-dom";
 import axios from "axios";
 import {MASSAGE_OPTIONS} from "../data/massageTypes";
 import {API_URL} from "../api/config.ts";
+import {useScrollAnimation} from "../hooks/useScrollAnimation";
 
 type Slot = {
   date: string;
@@ -84,6 +85,7 @@ export default function Booking() {
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const pageRef = useScrollAnimation<HTMLElement>();
 
   useEffect(() => {
     const fetchSlots = async () => {
@@ -237,7 +239,7 @@ export default function Booking() {
     );
 
   return (
-    <section className="page booking-page">
+    <section ref={pageRef} className="page booking-page scroll-animate">
       <div className="booking-card">
         <div className="booking-hero">
           <div className="booking-hero-text">
@@ -251,6 +253,7 @@ export default function Booking() {
             <img
               src="/images/8-maerz.png"
               alt="Intensive Rückenpflege mit Beinmassage"
+              loading="lazy"
             />
           </div>
         </div>
@@ -319,6 +322,27 @@ export default function Booking() {
           {error && <p className="error-text">{error}</p>}
           {success && <p className="success-text">{success}</p>}
 
+          {loading ? (
+            <div className="skeleton-calendar" aria-hidden>
+              <div className="skeleton skeleton-cell" style={{height: 28, width: "40%"}} />
+              <div className="skeleton-row">
+                {Array.from({length: 7}).map((_, i) => (
+                  <div key={`w-${i}`} className="skeleton skeleton-cell" />
+                ))}
+              </div>
+              <div className="skeleton-row">
+                {Array.from({length: 7}).map((_, i) => (
+                  <div key={`d-${i}`} className="skeleton skeleton-cell" />
+                ))}
+              </div>
+              <div className="skeleton-times">
+                {Array.from({length: 8}).map((_, i) => (
+                  <div key={`t-${i}`} className="skeleton skeleton-time" />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <>
           <div className="booking-calendar-panel">
             <div className="booking-calendar-month">{monthLabel}</div>
             <div className="booking-calendar-weekdays">
@@ -384,6 +408,8 @@ export default function Booking() {
                 ))}
               </div>
             </div>
+          )}
+            </>
           )}
 
           <div className="booking-submit-row">

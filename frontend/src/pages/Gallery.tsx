@@ -1,6 +1,7 @@
 import {useEffect, useState} from "react";
 import {fetchPublicGallery} from "../api/cms";
 import type {GalleryItemDto} from "../types/cms";
+import {useScrollAnimation} from "../hooks/useScrollAnimation";
 
 const STORAGE_KEY = "ruhequelle-reviews";
 
@@ -74,6 +75,8 @@ export default function Gallery() {
   });
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const pageRef = useScrollAnimation<HTMLElement>();
+  const reviewsRef = useScrollAnimation<HTMLDivElement>();
 
   useEffect(() => {
     let cancelled = false;
@@ -137,7 +140,10 @@ export default function Gallery() {
   };
 
   return (
-    <section className="page gallery-page">
+    <section
+      ref={pageRef}
+      className="page gallery-page scroll-animate section-watermark"
+    >
       <div className="gallery-header">
         <p className="eyebrow">Galerie</p>
         <h2>Einblicke in die Praxis</h2>
@@ -154,24 +160,33 @@ export default function Gallery() {
       )}
 
       {galleryItems.length > 0 && (
-        <div className="gallery-grid">
-          {galleryItems.map((item) => (
-            <div
-              key={item.id}
-              className={`gallery-item${item.type === "VIDEO" ? " gallery-video" : ""}`}
-            >
-              {item.type === "VIDEO" ? (
-                <video src={item.url} controls muted loop playsInline />
-              ) : (
-                <img src={item.url} alt={item.caption ?? "Galerie"} />
-              )}
-              {item.caption && <p className="gallery-caption">{item.caption}</p>}
-            </div>
-          ))}
-        </div>
+        <>
+          <p className="gallery-swipe-hint">← Wischen für mehr Einblicke →</p>
+          <div className="gallery-grid">
+            {galleryItems.map((item) => (
+              <div
+                key={item.id}
+                className={`gallery-item${item.type === "VIDEO" ? " gallery-video" : ""}`}
+              >
+                {item.type === "VIDEO" ? (
+                  <video src={item.url} controls muted loop playsInline />
+                ) : (
+                  <img
+                    src={item.url}
+                    alt={item.caption ?? "Galerie"}
+                    loading="lazy"
+                  />
+                )}
+                {item.caption && <p className="gallery-caption">{item.caption}</p>}
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
-      <div className="reviews">
+      <hr className="section-divider" />
+
+      <div ref={reviewsRef} className="reviews scroll-animate">
         <h3>Kundenstimmen</h3>
 
         <form className="review-form" onSubmit={handleSubmit}>

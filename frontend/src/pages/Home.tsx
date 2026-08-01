@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import {Link} from "react-router-dom";
 import {fetchPublicNews} from "../api/cms";
 import type {NewsItem} from "../types/cms";
+import {useScrollAnimation} from "../hooks/useScrollAnimation";
 
 function formatNewsDate(iso: string): string {
   if (!iso) {
@@ -21,6 +22,8 @@ function formatNewsDate(iso: string): string {
 export default function Home() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
+  const newsRef = useScrollAnimation<HTMLElement>();
+  const actionsRef = useScrollAnimation<HTMLElement>();
 
   useEffect(() => {
     let cancelled = false;
@@ -40,9 +43,16 @@ export default function Home() {
   return (
     <>
       <section className="page hero-page">
+        <div className="hero-particles" aria-hidden>
+          <span className="hero-particle" />
+          <span className="hero-particle" />
+          <span className="hero-particle" />
+          <span className="hero-particle" />
+        </div>
         <div className="hero-content">
           <p className="eyebrow">Ruhequelle</p>
           <h1>Raum für Gesundheit, Ruhe und Erholung</h1>
+          <hr className="hero-heading-line" />
           <p className="lead">
             Individuelle Massagen für mehr Leichtigkeit im Alltag. Mit sanften
             Techniken, warmen Ölen und ganz viel Zeit für dich.
@@ -52,9 +62,15 @@ export default function Home() {
           </Link>
         </div>
         <div className="hero-art">
-          <img src="/images/home.png" alt="Ruhequelle – Raum für Gesundheit und Erholung" />
+          <img
+            src="/images/home.png"
+            alt="Ruhequelle – Raum für Gesundheit und Erholung"
+            loading="eager"
+          />
         </div>
       </section>
+
+      <hr className="section-divider" />
 
       {newsLoading && (
         <section className="page news-page">
@@ -63,7 +79,10 @@ export default function Home() {
       )}
 
       {!newsLoading && news.length > 0 && (
-        <section className="page news-page">
+        <section
+          ref={newsRef}
+          className="page news-page scroll-animate section-watermark"
+        >
           <h2>Aktuelles</h2>
           <p className="news-subtitle">Neuigkeiten aus der Praxis</p>
           <div className="news-list">
@@ -71,7 +90,7 @@ export default function Home() {
               <article key={item.id} className="action-card news-card">
                 {item.imageUrl && (
                   <div className="action-image">
-                    <img src={item.imageUrl} alt={item.title} />
+                    <img src={item.imageUrl} alt={item.title} loading="lazy" />
                   </div>
                 )}
                 <div className="action-content">
@@ -91,7 +110,12 @@ export default function Home() {
         </section>
       )}
 
-      <section className="page actions-page">
+      <hr className="section-divider" />
+
+      <section
+        ref={actionsRef}
+        className="page actions-page scroll-animate section-watermark"
+      >
         <h2>Aktuelle Aktionen & Specials</h2>
         <p className="actions-subtitle">Besondere Rituale für besondere Momente</p>
 
@@ -100,6 +124,7 @@ export default function Home() {
             <img
               src="/images/rueckenpflege.png"
               alt="Intensive Rückenpflege mit Beinmassage"
+              loading="lazy"
             />
           </div>
           <div className="action-content">
