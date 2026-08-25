@@ -1,10 +1,11 @@
-import {useEffect, useRef} from "react";
+import {useCallback, useRef} from "react";
 
 export function useScrollAnimation<T extends HTMLElement = HTMLDivElement>() {
-  const ref = useRef<T>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
-  useEffect(() => {
-    const node = ref.current;
+  return useCallback((node: T | null) => {
+    observerRef.current?.disconnect();
+    observerRef.current = null;
     if (!node) {
       return;
     }
@@ -20,8 +21,6 @@ export function useScrollAnimation<T extends HTMLElement = HTMLDivElement>() {
     );
 
     observer.observe(node);
-    return () => observer.disconnect();
+    observerRef.current = observer;
   }, []);
-
-  return ref;
 }

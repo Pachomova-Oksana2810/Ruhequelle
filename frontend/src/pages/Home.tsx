@@ -1,19 +1,26 @@
 import {useEffect, useState} from "react";
 import {Link} from "react-router-dom";
+import {API_URL} from "../api/config";
 import {fetchPublicNews} from "../api/cms";
 import type {NewsItem} from "../types/cms";
 import {useScrollAnimation} from "../hooks/useScrollAnimation";
+
+const NEWS_POLL_MS = 5000;
 
 function formatNewsDate(iso: string): string {
   if (!iso) {
     return "";
   }
   try {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return iso;
+    }
     return new Intl.DateTimeFormat("de-DE", {
       day: "2-digit",
-      month: "long",
+      month: "2-digit",
       year: "numeric",
-    }).format(new Date(iso));
+    }).format(date);
   } catch {
     return iso;
   }
@@ -26,17 +33,38 @@ export default function Home() {
   const actionsRef = useScrollAnimation<HTMLElement>();
 
   useEffect(() => {
+    fetch(`${API_URL}/api/news`)
+      .then((r) => r.json())
+      .then((data) => console.log("News API response:", data))
+      .catch((e) => console.error("News API error:", e));
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
-    void (async () => {
-      setNewsLoading(true);
-      const items = await fetchPublicNews();
-      if (!cancelled) {
-        setNews(items);
-        setNewsLoading(false);
+
+    const load = async (initial: boolean) => {
+      try {
+        const items = await fetchPublicNews();
+        if (!cancelled) {
+          setNews(items);
+        }
+      } catch (e) {
+        console.error("News API error:", e);
+        if (!cancelled) {
+          setNews([]);
+        }
+      } finally {
+        if (!cancelled && initial) {
+          setNewsLoading(false);
+        }
       }
-    })();
+    };
+
+    void load(true);
+    const intervalId = window.setInterval(() => void load(false), NEWS_POLL_MS);
     return () => {
       cancelled = true;
+      window.clearInterval(intervalId);
     };
   }, []);
 
@@ -72,25 +100,29 @@ export default function Home() {
 
       <hr className="section-divider" />
 
-      {newsLoading && (
-        <section className="page news-page">
+      <section
+        ref={newsRef}
+        className="page news-page scroll-animate section-watermark"
+      >
+        <h2>Aktuelles</h2>
+        <p className="news-subtitle">Neuigkeiten aus der Praxis</p>
+        {newsLoading && (
           <p className="news-loading">Nachrichten werden geladen…</p>
-        </section>
-      )}
-
-      {!newsLoading && news.length > 0 && (
-        <section
-          ref={newsRef}
-          className="page news-page scroll-animate section-watermark"
-        >
-          <h2>Aktuelles</h2>
-          <p className="news-subtitle">Neuigkeiten aus der Praxis</p>
+        )}
+        {!newsLoading && news.length === 0 && (
+          <p className="news-empty">Derzeit sind keine Neuigkeiten vorhanden.</p>
+        )}
+        {!newsLoading && news.length > 0 && (
           <div className="news-list">
             {news.map((item) => (
               <article key={item.id} className="action-card news-card">
                 {item.imageUrl && (
                   <div className="action-image">
-                    <img src={item.imageUrl} alt={item.title} loading="lazy" />
+                    <img
+                      src={encodeURI(item.imageUrl)}
+                      alt={item.title}
+                      loading="lazy"
+                    />
                   </div>
                 )}
                 <div className="action-content">
@@ -107,8 +139,8 @@ export default function Home() {
               </article>
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       <hr className="section-divider" />
 

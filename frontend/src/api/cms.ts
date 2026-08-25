@@ -12,11 +12,14 @@ export async function fetchPublicNews(): Promise<NewsItem[]> {
   try {
     const res = await fetch(`${API_URL}/api/news`);
     if (!res.ok) {
+      console.error("News API error:", res.status, res.statusText);
       return [];
     }
     const data: unknown = await res.json();
+    console.log("News fetched:", data);
     return parseNewsList(data);
-  } catch {
+  } catch (e) {
+    console.error("News API error:", e);
     return [];
   }
 }

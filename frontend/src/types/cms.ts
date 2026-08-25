@@ -58,16 +58,43 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+function parseId(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function parsePublishedAt(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (Array.isArray(value) && value.length >= 3) {
+    const [year, month, day, hour = 0, minute = 0, second = 0] = value;
+    const pad = (n: unknown) => String(Number(n) || 0).padStart(2, "0");
+    return `${year}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}:${pad(second)}`;
+  }
+  return "";
+}
+
 export function parseNewsItem(raw: unknown): NewsItem | null {
-  if (!isRecord(raw) || typeof raw.id !== "number") {
+  if (!isRecord(raw)) {
+    return null;
+  }
+  const id = parseId(raw.id);
+  if (id == null) {
     return null;
   }
   return {
-    id: raw.id,
+    id,
     title: String(raw.title ?? ""),
     content: String(raw.content ?? ""),
     imageUrl: raw.imageUrl != null ? String(raw.imageUrl) : null,
-    publishedAt: String(raw.publishedAt ?? ""),
+    publishedAt: parsePublishedAt(raw.publishedAt),
     visible: Boolean(raw.visible),
   };
 }

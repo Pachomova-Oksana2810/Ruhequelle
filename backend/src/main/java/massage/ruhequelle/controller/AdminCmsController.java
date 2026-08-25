@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +46,9 @@ public class AdminCmsController {
     @PostMapping("/news")
     public News createNews(@RequestBody News news) {
         news.setId(null);
+        if (news.getPublishedAt() == null) {
+            news.setPublishedAt(LocalDateTime.now());
+        }
         return newsRepository.save(news);
     }
 
