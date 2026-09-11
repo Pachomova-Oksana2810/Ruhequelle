@@ -75,9 +75,9 @@ export default function Home() {
           className="video-hero__video"
           src="https://res.cloudinary.com/dxkyx2vsa/video/upload/v1789130237/Heder12_zpaiyb.mp4"
           autoPlay
-          muted
           loop
           playsInline
+          controls={false}
         />
         <div className="video-hero__overlay" />
         <div className="video-hero__content">
@@ -91,34 +91,6 @@ export default function Home() {
         </div>
         <div className="video-hero__scroll" aria-hidden />
       </div>
-
-      <section className="page hero-page">
-        <div className="hero-particles" aria-hidden>
-          <span className="hero-particle" />
-          <span className="hero-particle" />
-          <span className="hero-particle" />
-          <span className="hero-particle" />
-        </div>
-        <div className="hero-content">
-          <p className="eyebrow">Ruhequelle</p>
-          <h1>Raum für Gesundheit, Ruhe und Erholung</h1>
-          <hr className="hero-heading-line" />
-          <p className="lead">
-            Individuelle Massagen für mehr Leichtigkeit im Alltag. Mit sanften
-            Techniken, warmen Ölen und ganz viel Zeit für dich.
-          </p>
-          <Link className="pill-button" to="/appointment">
-            Termin vereinbaren
-          </Link>
-        </div>
-        <div className="hero-art">
-          <img
-            src="/images/home.png"
-            alt="Ruhequelle – Raum für Gesundheit und Erholung"
-            loading="eager"
-          />
-        </div>
-      </section>
 
       <hr className="section-divider" />
 
