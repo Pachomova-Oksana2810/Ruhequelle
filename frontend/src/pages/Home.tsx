@@ -29,6 +29,7 @@ function formatNewsDate(iso: string): string {
 export default function Home() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
+  const [muted, setMuted] = useState(true);
   const newsRef = useScrollAnimation<HTMLElement>();
   const actionsRef = useScrollAnimation<HTMLElement>();
 
@@ -75,10 +76,9 @@ export default function Home() {
           className="video-hero__video"
           src="https://res.cloudinary.com/dxkyx2vsa/video/upload/fl_progressive/v1789130237/Heder12_zpaiyb.mp4"
           autoPlay
-          muted
+          muted={muted}
           loop
           playsInline
-          controls={false}
         />
         <div className="video-hero__overlay" />
         <div className="video-hero__content">
@@ -90,6 +90,13 @@ export default function Home() {
             Termin buchen
           </Link>
         </div>
+        <button
+          className="video-hero__sound"
+          onClick={() => setMuted(!muted)}
+          aria-label={muted ? "Ton einschalten" : "Ton ausschalten"}
+        >
+          {muted ? "🔇" : "🔊"}
+        </button>
         <div className="video-hero__scroll" aria-hidden />
       </div>
 
