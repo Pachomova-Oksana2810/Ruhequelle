@@ -368,6 +368,122 @@
   transform: translateY(-12%) scale(1.04);
 }
 
+/* Video Hero */
+.video-hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-hero__video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.video-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(30, 20, 10, 0.45);
+  z-index: 1;
+}
+
+.video-hero__content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: #fffdf9;
+  padding: 2rem;
+  animation: fadeInUp 1s ease forwards;
+}
+
+.video-hero__title {
+  font-family: "Playfair Display", "Times New Roman", serif;
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+}
+
+.video-hero__subtitle {
+  font-size: clamp(1rem, 3vw, 1.5rem);
+  letter-spacing: 0.2em;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+  text-transform: uppercase;
+}
+
+.video-hero__button {
+  display: inline-block;
+  padding: 1rem 2.5rem;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  border: 2px solid #fffdf9;
+  background: transparent;
+  color: #fffdf9;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: none;
+}
+
+.video-hero__button:hover {
+  background: #b89263;
+  border-color: #b89263;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(184, 146, 99, 0.4);
+}
+
+/* Scroll down indicator */
+.video-hero__scroll {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  animation: bounce 2s infinite;
+}
+
+.video-hero__scroll::after {
+  content: "↓";
+  color: #fffdf9;
+  font-size: 1.5rem;
+  opacity: 0.7;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(10px);
+  }
+}
+
+@media (max-width: 768px) {
+  .video-hero {
+    height: 100svh;
+  }
+
+  .video-hero__title {
+    font-size: clamp(2.5rem, 10vw, 4rem);
+  }
+}
+
 .highlight-page {
   text-align: center;
 }

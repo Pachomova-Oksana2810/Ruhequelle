@@ -70,6 +70,28 @@ export default function Home() {
 
   return (
     <>
+      <div className="video-hero">
+        <video
+          className="video-hero__video"
+          src="/images/Heder12.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+        />
+        <div className="video-hero__overlay" />
+        <div className="video-hero__content">
+          <h1 className="video-hero__title">Ruhequelle</h1>
+          <p className="video-hero__subtitle">
+            Massage & Entspannung in Koblenz
+          </p>
+          <Link to="/appointment" className="video-hero__button pill-button">
+            Termin buchen
+          </Link>
+        </div>
+        <div className="video-hero__scroll" aria-hidden />
+      </div>
+
       <section className="page hero-page">
         <div className="hero-particles" aria-hidden>
           <span className="hero-particle" />

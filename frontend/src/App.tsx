@@ -60,14 +60,16 @@ function AppShell() {
         </Link>
       </header>
 
-      <div className="page-header">
-        <img
-          src="/images/header1.png"
-          alt=""
-          className="page-header-image"
-          loading="lazy"
-        />
-      </div>
+      {location.pathname !== "/" && (
+        <div className="page-header">
+          <img
+            src="/images/header1.png"
+            alt=""
+            className="page-header-image"
+            loading="lazy"
+          />
+        </div>
+      )}
 
       <main>
         <Routes>
