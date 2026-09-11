@@ -20,6 +20,7 @@ target/
 *.ipr
 *.mp4
 *.mov
+!frontend/public/images/Heder12.mp4
 
 ### NetBeans ###
 /nbproject/private/
