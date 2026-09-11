@@ -73,7 +73,7 @@ export default function Home() {
       <div className="video-hero">
         <video
           className="video-hero__video"
-          src="/images/Heder12.mp4"
+          src="https://res.cloudinary.com/dxkyx2vsa/video/upload/v1789130237/Heder12_zpaiyb.mp4"
           autoPlay
           muted
           loop
