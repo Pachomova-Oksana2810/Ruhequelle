@@ -1,6 +1,7 @@
 package massage.ruhequelle.controller;
 
 import massage.ruhequelle.dto.BlockSlotRequest;
+import massage.ruhequelle.dto.BlockSlotsResponse;
 import massage.ruhequelle.model.Appointment;
 import massage.ruhequelle.model.BlockedSlot;
 import massage.ruhequelle.repository.BlockedSlotRepository;
@@ -14,14 +15,34 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
+
+    private static final int MAX_BLOCK_RANGE_DAYS = 90;
+
+    private static final List<LocalTime> WORKING_HOURS = List.of(
+            LocalTime.of(8, 15),
+            LocalTime.of(9, 0),
+            LocalTime.of(10, 0),
+            LocalTime.of(11, 0),
+            LocalTime.of(12, 0),
+            LocalTime.of(13, 0),
+            LocalTime.of(14, 0),
+            LocalTime.of(15, 0),
+            LocalTime.of(16, 0),
+            LocalTime.of(17, 0),
+            LocalTime.of(18, 0)
+    );
 
     private final AppointmentService appointmentService;
     private final BlockedSlotRepository blockedSlotRepository;
@@ -134,28 +155,77 @@ public class AdminController {
 
     @PostMapping("/slots/block")
     public ResponseEntity<?> blockSlot(@RequestBody BlockSlotRequest body) {
-        if (body.getDate() == null || body.getTime() == null) {
-            return ResponseEntity.badRequest().body("date and time required");
+        if (body.getDate() == null) {
+            return ResponseEntity.badRequest().body("date required");
         }
         if (body.getReason() == null || body.getReason().isBlank()) {
             return ResponseEntity.badRequest().body("reason required");
         }
-        if (appointmentService.isSlotTaken(body.getDate(), body.getTime())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Slot has an existing appointment");
+
+        LocalDate startDate = body.getDate();
+        LocalDate endDate = body.getEndDate() != null ? body.getEndDate() : startDate;
+        if (endDate.isBefore(startDate)) {
+            return ResponseEntity.badRequest().body("endDate must be on or after date");
         }
-        if (blockedSlotRepository.existsByDateAndTime(body.getDate(), body.getTime())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Slot is already blocked");
+        if (ChronoUnit.DAYS.between(startDate, endDate) > MAX_BLOCK_RANGE_DAYS) {
+            return ResponseEntity.badRequest().body("date range must not exceed " + MAX_BLOCK_RANGE_DAYS + " days");
         }
-        BlockedSlot slot = new BlockedSlot();
-        slot.setDate(body.getDate());
-        slot.setTime(body.getTime());
-        slot.setReason(body.getReason().trim());
+
+        boolean allDay = body.getTime() == null;
+        List<LocalTime> times = allDay ? WORKING_HOURS : List.of(body.getTime());
+        String reason = body.getReason().trim();
+        String batchId = UUID.randomUUID().toString();
+
+        List<BlockedSlot> toSave = new ArrayList<>();
+        int skippedTaken = 0;
+        int skippedAlreadyBlocked = 0;
+
+        LocalDate current = startDate;
+        while (!current.isAfter(endDate)) {
+            if (current.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                for (LocalTime time : times) {
+                    if (appointmentService.isSlotTaken(current, time)) {
+                        skippedTaken++;
+                        continue;
+                    }
+                    if (blockedSlotRepository.existsByDateAndTime(current, time)) {
+                        skippedAlreadyBlocked++;
+                        continue;
+                    }
+                    BlockedSlot slot = new BlockedSlot();
+                    slot.setDate(current);
+                    slot.setTime(time);
+                    slot.setReason(reason);
+                    slot.setBatchId(batchId);
+                    toSave.add(slot);
+                }
+            }
+            current = current.plusDays(1);
+        }
+
+        if (toSave.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("No free slots in this period (already booked or blocked)");
+        }
+
         try {
-            BlockedSlot saved = blockedSlotRepository.save(slot);
-            return ResponseEntity.ok(saved);
+            blockedSlotRepository.saveAll(toSave);
         } catch (DataIntegrityViolationException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Slot is already blocked");
         }
+
+        BlockSlotsResponse response = BlockSlotsResponse.builder()
+                .batchId(batchId)
+                .startDate(startDate)
+                .endDate(endDate)
+                .time(body.getTime())
+                .allDay(allDay)
+                .reason(reason)
+                .created(toSave.size())
+                .skippedTaken(skippedTaken)
+                .skippedAlreadyBlocked(skippedAlreadyBlocked)
+                .build();
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/slots/block/{id}")
@@ -164,6 +234,15 @@ public class AdminController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Blocked slot not found");
         }
         blockedSlotRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/slots/block/batch/{batchId}")
+    public ResponseEntity<Void> unblockBatch(@PathVariable String batchId) {
+        if (batchId == null || batchId.isBlank() || !blockedSlotRepository.existsByBatchId(batchId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Blocked period not found");
+        }
+        blockedSlotRepository.deleteByBatchId(batchId);
         return ResponseEntity.noContent().build();
     }
 }

@@ -12,6 +12,9 @@ public class BlockSlotRequest {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate date;
 
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate endDate;
+
     @JsonFormat(pattern = "HH:mm")
     private LocalTime time;
 

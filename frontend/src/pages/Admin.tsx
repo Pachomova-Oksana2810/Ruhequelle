@@ -50,6 +50,17 @@ type BlockedRow = {
   date: string;
   time: string;
   reason: string;
+  batchId: string | null;
+};
+
+type BlockedGroup = {
+  key: string;
+  ids: number[];
+  batchId: string | null;
+  startDate: string;
+  endDate: string;
+  timeLabel: string;
+  reason: string;
 };
 
 type ManualForm = {
@@ -124,9 +135,59 @@ function parseBlocked(raw: unknown): BlockedRow[] {
       date: String(o.date ?? ""),
       time: normalizeTimeDisplay(String(o.time ?? "")),
       reason: String(o.reason ?? ""),
+      batchId: typeof o.batchId === "string" && o.batchId ? o.batchId : null,
     });
   }
   return out;
+}
+
+function groupBlocked(rows: BlockedRow[]): BlockedGroup[] {
+  const byBatch = new Map<string, BlockedRow[]>();
+  const singles: BlockedRow[] = [];
+  for (const row of rows) {
+    if (row.batchId) {
+      const list = byBatch.get(row.batchId) ?? [];
+      list.push(row);
+      byBatch.set(row.batchId, list);
+    } else {
+      singles.push(row);
+    }
+  }
+
+  const groups: BlockedGroup[] = [];
+  for (const [batchId, items] of byBatch) {
+    const dates = [...new Set(items.map((i) => i.date))].sort();
+    const times = [...new Set(items.map((i) => i.time))].sort();
+    const allDay = times.length > 1;
+    groups.push({
+      key: batchId,
+      ids: items.map((i) => i.id),
+      batchId,
+      startDate: dates[0] ?? "",
+      endDate: dates[dates.length - 1] ?? "",
+      timeLabel: allDay ? "Ganzer Tag" : times.join(", "),
+      reason: items[0]?.reason ?? "",
+    });
+  }
+  for (const row of singles) {
+    groups.push({
+      key: `id-${row.id}`,
+      ids: [row.id],
+      batchId: null,
+      startDate: row.date,
+      endDate: row.date,
+      timeLabel: row.time,
+      reason: row.reason,
+    });
+  }
+  groups.sort((a, b) => {
+    const dateCmp = a.startDate.localeCompare(b.startDate);
+    if (dateCmp !== 0) {
+      return dateCmp;
+    }
+    return a.timeLabel.localeCompare(b.timeLabel);
+  });
+  return groups;
 }
 
 export default function Admin() {
@@ -153,7 +214,7 @@ export default function Admin() {
     time: "",
   });
 
-  const [blockForm, setBlockForm] = useState({date: "", time: "", reason: ""});
+  const [blockForm, setBlockForm] = useState({fromDate: "", toDate: "", time: "", reason: ""});
 
   const [editing, setEditing] = useState<AppointmentRow | null>(null);
   const [editForm, setEditForm] = useState<EditForm>({
@@ -254,6 +315,8 @@ export default function Admin() {
     [groupedSlots]
   );
 
+  const blockedGroups = useMemo(() => groupBlocked(blocked), [blocked]);
+
   const tryLogin = async () => {
     const pw = passwordInput.trim();
     if (!pw) {
@@ -350,19 +413,28 @@ export default function Admin() {
 
   const submitBlock = async () => {
     setActionMessage("");
-    if (!blockForm.date || !blockForm.time || !blockForm.reason.trim()) {
-      setActionMessage("Datum, Uhrzeit und Grund für die Sperre angeben.");
+    if (!blockForm.fromDate || !blockForm.reason.trim()) {
+      setActionMessage("Bitte Von-Datum und Grund für die Sperre angeben.");
+      return;
+    }
+    const toDate = blockForm.toDate || blockForm.fromDate;
+    if (toDate < blockForm.fromDate) {
+      setActionMessage("Bis-Datum darf nicht vor dem Von-Datum liegen.");
       return;
     }
     try {
+      const payload: Record<string, string> = {
+        date: blockForm.fromDate,
+        endDate: toDate,
+        reason: blockForm.reason.trim(),
+      };
+      if (blockForm.time) {
+        payload.time = blockForm.time;
+      }
       const res = await fetch(`${API_URL}/api/admin/slots/block`, {
         method: "POST",
         headers: getAdminHeaders(),
-        body: JSON.stringify({
-          date: blockForm.date,
-          time: blockForm.time,
-          reason: blockForm.reason.trim(),
-        }),
+        body: JSON.stringify(payload),
       });
       if (res.status === 403) {
         logout();
@@ -374,11 +446,30 @@ export default function Admin() {
         return;
       }
       if (!res.ok) {
-        setActionMessage(`Fehler: ${res.status}`);
+        const t = await res.text();
+        setActionMessage(t || `Fehler: ${res.status}`);
         return;
       }
-      setActionMessage("Slot gesperrt.");
-      setBlockForm({date: "", time: "", reason: ""});
+      const body: unknown = await res.json();
+      const created =
+        typeof body === "object" && body !== null && "created" in body
+          ? Number((body as {created: unknown}).created)
+          : 0;
+      const skippedTaken =
+        typeof body === "object" && body !== null && "skippedTaken" in body
+          ? Number((body as {skippedTaken: unknown}).skippedTaken)
+          : 0;
+      const allDay =
+        typeof body === "object" && body !== null && "allDay" in body
+          ? Boolean((body as {allDay: unknown}).allDay)
+          : !blockForm.time;
+      const isRange = toDate !== blockForm.fromDate;
+      let message = isRange || allDay ? `Zeitraum gesperrt (${created} Slots).` : "Slot gesperrt.";
+      if (skippedTaken > 0) {
+        message += ` ${skippedTaken} bestehende Termine übersprungen.`;
+      }
+      setActionMessage(message);
+      setBlockForm({fromDate: "", toDate: "", time: "", reason: ""});
       await loadDashboard();
       await fetchPublicSlots();
     } catch {
@@ -386,13 +477,20 @@ export default function Admin() {
     }
   };
 
-  const unblock = async (id: number) => {
-    if (!confirm("Sperre wirklich aufheben?")) {
+  const unblock = async (group: BlockedGroup) => {
+    const rangeLabel =
+      group.startDate === group.endDate
+        ? formatDeDate(group.startDate)
+        : `${formatDeDate(group.startDate)} – ${formatDeDate(group.endDate)}`;
+    if (!confirm(`Sperre wirklich aufheben?\n${rangeLabel} · ${group.timeLabel} · ${group.reason}`)) {
       return;
     }
     setActionMessage("");
     try {
-      const res = await fetch(`${API_URL}/api/admin/slots/block/${id}`, {
+      const url = group.batchId
+        ? `${API_URL}/api/admin/slots/block/batch/${encodeURIComponent(group.batchId)}`
+        : `${API_URL}/api/admin/slots/block/${group.ids[0]}`;
+      const res = await fetch(url, {
         method: "DELETE",
         headers: getAdminHeaders(),
       });
@@ -734,24 +832,43 @@ export default function Admin() {
         </div>
 
         <div className="admin-card">
-          <h2>Slot sperren</h2>
-          <p className="admin-hint">z. B. Urlaub, Pause — erscheint als belegt in der öffentlichen Buchung.</p>
+          <h2>Zeitraum / Slot sperren</h2>
+          <p className="admin-hint">
+            Urlaub: Von und Bis wählen, Uhrzeit auf „Ganzer Tag“ lassen. Einzelnen Slot: gleiches Datum und eine Uhrzeit.
+            Sonntage werden übersprungen.
+          </p>
           <div className="admin-form-grid">
             <label>
-              Datum
+              Von
               <input
                 type="date"
-                value={blockForm.date}
-                onChange={(e) => setBlockForm((p) => ({...p, date: e.target.value}))}
+                value={blockForm.fromDate}
+                onChange={(e) => {
+                  const fromDate = e.target.value;
+                  setBlockForm((p) => ({
+                    ...p,
+                    fromDate,
+                    toDate: !p.toDate || p.toDate < fromDate ? fromDate : p.toDate,
+                  }));
+                }}
               />
             </label>
             <label>
+              Bis
+              <input
+                type="date"
+                value={blockForm.toDate}
+                min={blockForm.fromDate || undefined}
+                onChange={(e) => setBlockForm((p) => ({...p, toDate: e.target.value}))}
+              />
+            </label>
+            <label className="admin-span-2">
               Uhrzeit
               <select
                 value={blockForm.time}
                 onChange={(e) => setBlockForm((p) => ({...p, time: e.target.value}))}
               >
-                <option value="">— Zeit —</option>
+                <option value="">Ganzer Tag (alle Zeiten)</option>
                 {SLOT_TIMES.map((t) => (
                   <option key={t} value={t}>
                     {t}
@@ -774,7 +891,7 @@ export default function Admin() {
         </div>
 
         <div className="admin-card admin-card-wide">
-          <h2>Gesperrte Slots</h2>
+          <h2>Gesperrte Zeiträume</h2>
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
@@ -786,23 +903,27 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody>
-                {blocked.length === 0 ? (
+                {blockedGroups.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="admin-table-empty">
                       Keine Sperren.
                     </td>
                   </tr>
                 ) : (
-                  blocked.map((b) => (
-                    <tr key={b.id}>
-                      <td>{formatDeDate(b.date)}</td>
-                      <td>{b.time}</td>
-                      <td>{b.reason}</td>
+                  blockedGroups.map((g) => (
+                    <tr key={g.key}>
+                      <td>
+                        {g.startDate === g.endDate
+                          ? formatDeDate(g.startDate)
+                          : `${formatDeDate(g.startDate)} – ${formatDeDate(g.endDate)}`}
+                      </td>
+                      <td>{g.timeLabel}</td>
+                      <td>{g.reason}</td>
                       <td>
                         <button
                           type="button"
                           className="admin-btn-small"
-                          onClick={() => void unblock(b.id)}
+                          onClick={() => void unblock(g)}
                         >
                           Freigeben
                         </button>

@@ -1,7 +1,10 @@
 .app {
+  --header-height: 126px;
   min-height: 100vh;
+  min-height: 100dvh;
   color: #3f3a32;
   background: url("/images/body.png") center center / cover no-repeat fixed;
+  overflow-x: hidden;
 }
 
 .topbar {
@@ -372,23 +375,28 @@
 .video-hero {
   position: relative;
   width: 100%;
-  height: 100vh;
+  height: calc(100vh - var(--header-height));
+  height: calc(100dvh - var(--header-height));
+  min-height: 420px;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #140e0a;
+}
+
+.video-hero__media {
+  position: absolute;
+  inset: 0;
 }
 
 .video-hero__video {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  min-width: 100%;
-  min-height: 100%;
-  width: auto;
-  height: auto;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+  object-position: center;
   z-index: 0;
 }
 
@@ -499,13 +507,81 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .video-hero {
-    height: 100svh;
+    height: auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .video-hero__media {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #140e0a;
+  }
+
+  .video-hero__video {
+    object-fit: contain;
+    object-position: center;
+  }
+
+  .video-hero__content {
+    position: relative;
+    width: 100%;
+    padding: 1.5rem 1.25rem 1.85rem;
+    background: #140e0a;
   }
 
   .video-hero__title {
-    font-size: clamp(2.5rem, 10vw, 4rem);
+    font-size: clamp(2rem, 9vw, 2.8rem);
+    letter-spacing: 0.06em;
+    margin-bottom: 0.55rem;
+  }
+
+  .video-hero__subtitle {
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.15rem;
+    padding: 0 0.25rem;
+    line-height: 1.45;
+  }
+
+  .video-hero__overlay {
+    background: rgba(20, 14, 10, 0.12);
+  }
+
+  .video-hero__button {
+    padding: 0.85rem 1.8rem;
+  }
+
+  .video-hero__sound {
+    bottom: max(0.7rem, env(safe-area-inset-bottom));
+    right: max(0.7rem, env(safe-area-inset-right));
+    width: 44px;
+    height: 44px;
+  }
+
+  .video-hero__scroll {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) and (max-height: 520px) {
+  .video-hero__content {
+    padding: 1rem 1rem 1.25rem;
+  }
+
+  .video-hero__title {
+    font-size: 1.8rem;
+  }
+
+  .video-hero__subtitle {
+    margin-bottom: 0.8rem;
   }
 }
 
@@ -2133,6 +2209,20 @@
 }
 
 @media (max-width: 900px) {
+  .app {
+    --header-height: 72px;
+    background-attachment: scroll;
+    background-position: top center;
+  }
+
+  .page {
+    padding: 2.5rem 5vw 3.25rem;
+  }
+
+  .page-header-image {
+    max-height: 180px;
+  }
+
   .hero-page,
   .about-content,
   .booking-layout {
@@ -2144,19 +2234,29 @@
     grid-template-columns: 1fr;
   }
 
+  .booking-card {
+    padding: 1.4rem 1.1rem 1.8rem;
+    border-radius: 20px;
+  }
+
+  .booking-hero {
+    padding: 1.2rem;
+  }
+
   .topbar {
-    flex-wrap: wrap;
-    padding: 0.65rem 4vw;
-    gap: 0.75rem;
+    flex-wrap: nowrap;
+    padding: 0.35rem 4vw;
+    gap: 0.55rem;
   }
 
   .brand-logo {
-    height: 72px;
+    height: 56px;
   }
 
   .menu-toggle {
     display: flex;
-    margin-left: auto;
+    margin-left: 0;
+    flex-shrink: 0;
   }
 
   .topbar-nav {
@@ -2190,9 +2290,13 @@
   }
 
   .topbar .pill-button {
-    width: 100%;
-    order: 3;
-    text-align: center;
+    width: auto;
+    order: unset;
+    margin-left: auto;
+    padding: 0.5rem 1.05rem;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .menu-backdrop {
@@ -2293,6 +2397,21 @@
 
   .admin-span-2 {
     grid-column: span 1;
+  }
+}
+
+@media (max-width: 380px) {
+  .app {
+    --header-height: 64px;
+  }
+
+  .brand-logo {
+    height: 48px;
+  }
+
+  .topbar .pill-button {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.75rem;
   }
 }
 

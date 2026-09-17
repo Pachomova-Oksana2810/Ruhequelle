@@ -11,7 +11,8 @@ import java.time.LocalTime;
 @Entity
 @Table(
         name = "blocked_slots",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"slot_date", "slot_time"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"slot_date", "slot_time"}),
+        indexes = @Index(name = "idx_blocked_slots_batch_id", columnList = "batch_id")
 )
 public class BlockedSlot {
 
@@ -29,4 +30,8 @@ public class BlockedSlot {
 
     @Column(nullable = false, length = 255)
     private String reason;
+
+    /** Shared by all slots created together (e.g. a vacation range). */
+    @Column(name = "batch_id", length = 36)
+    private String batchId;
 }

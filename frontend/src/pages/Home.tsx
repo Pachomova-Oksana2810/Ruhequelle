@@ -72,15 +72,28 @@ export default function Home() {
   return (
     <>
       <div className="video-hero">
-        <video
-          className="video-hero__video"
-          src="https://res.cloudinary.com/dxkyx2vsa/video/upload/fl_progressive/v1789130237/Heder12_zpaiyb.mp4"
-          autoPlay
-          muted={muted}
-          loop
-          playsInline
-        />
-        <div className="video-hero__overlay" />
+        <div className="video-hero__media">
+          <video
+            className="video-hero__video"
+            src="https://res.cloudinary.com/dxkyx2vsa/video/upload/fl_progressive/v1789130237/Heder12_zpaiyb.mp4"
+            poster="https://res.cloudinary.com/dxkyx2vsa/video/upload/so_0,f_jpg/v1789130237/Heder12_zpaiyb.jpg"
+            autoPlay
+            muted={muted}
+            loop
+            playsInline
+            preload="metadata"
+            width={1280}
+            height={720}
+          />
+          <div className="video-hero__overlay" />
+          <button
+            className="video-hero__sound"
+            onClick={() => setMuted(!muted)}
+            aria-label={muted ? "Ton einschalten" : "Ton ausschalten"}
+          >
+            {muted ? "🔇" : "🔊"}
+          </button>
+        </div>
         <div className="video-hero__content">
           <h1 className="video-hero__title">Ruhequelle</h1>
           <p className="video-hero__subtitle">
@@ -90,13 +103,6 @@ export default function Home() {
             Termin buchen
           </Link>
         </div>
-        <button
-          className="video-hero__sound"
-          onClick={() => setMuted(!muted)}
-          aria-label={muted ? "Ton einschalten" : "Ton ausschalten"}
-        >
-          {muted ? "🔇" : "🔊"}
-        </button>
         <div className="video-hero__scroll" aria-hidden />
       </div>
 

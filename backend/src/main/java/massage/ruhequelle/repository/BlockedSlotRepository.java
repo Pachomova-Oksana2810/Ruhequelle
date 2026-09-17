@@ -3,6 +3,7 @@ package massage.ruhequelle.repository;
 import massage.ruhequelle.model.BlockedSlot;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -18,4 +19,9 @@ public interface BlockedSlotRepository extends JpaRepository<BlockedSlot, Long> 
     List<BlockedSlot> findAllByOrderByDateAscTimeAsc();
 
     List<BlockedSlot> findByReasonStartingWith(String prefix);
+
+    boolean existsByBatchId(String batchId);
+
+    @Transactional
+    long deleteByBatchId(String batchId);
 }
