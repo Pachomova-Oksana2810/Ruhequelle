@@ -43,7 +43,7 @@ public class GoogleCalendarService {
     private static final String APPLICATION_NAME = "Ruhequelle";
     private static final ZoneId BERLIN = ZoneId.of("Europe/Berlin");
     private static final int EVENT_DURATION_MINUTES = 60;
-    private static final int SYNC_DAYS_AHEAD = 30;
+    private static final int SYNC_DAYS_AHEAD = 90;
     private static final long WEBHOOK_TTL_MS = 7L * 24 * 60 * 60 * 1000;
 
     private static final List<LocalTime> WORKING_HOURS = List.of(

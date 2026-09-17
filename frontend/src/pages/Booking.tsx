@@ -2,7 +2,7 @@ import {useEffect, useMemo, useState} from "react";
 import {Link} from "react-router-dom";
 import axios from "axios";
 import {MASSAGE_OPTIONS} from "../data/massageTypes";
-import {API_URL} from "../api/config.ts";
+import {API_URL, BOOKING_DAYS_AHEAD} from "../api/config.ts";
 import {useScrollAnimation} from "../hooks/useScrollAnimation";
 
 type Slot = {
@@ -21,13 +21,27 @@ type FormData = {
   time: string;
 };
 
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function startOfMonth(year: number, month: number): Date {
+  return new Date(year, month, 1);
+}
+
+function isSameMonth(isoDate: string, year: number, month: number): boolean {
+  const date = new Date(`${isoDate}T12:00:00`);
+  return date.getFullYear() === year && date.getMonth() === month;
+}
+
 // Fallback-Slots wenn API nicht erreichbar ist
 function generateFallbackSlots(): Slot[] {
   const slots: Slot[] = [];
   const today = new Date();
-  for (let d = 0; d < 14; d++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + d);
+  for (let d = 0; d <= BOOKING_DAYS_AHEAD; d++) {
+    const date = addDays(today, d);
     const dateStr = toLocalIsoDate(date);
     const times = ["08:15", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
     times.forEach((time) => slots.push({date: dateStr, time, available: true}));
@@ -86,14 +100,17 @@ export default function Booking() {
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const pageRef = useScrollAnimation<HTMLElement>();
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const now = new Date();
+    return {year: now.getFullYear(), month: now.getMonth()};
+  });
 
   useEffect(() => {
     const fetchSlots = async () => {
       setLoading(true);
       setError("");
       const start = new Date();
-      const end = new Date();
-      end.setDate(start.getDate() + 13);
+      const end = addDays(start, BOOKING_DAYS_AHEAD);
       const startIso = toLocalIsoDate(start);
       const endIso = toLocalIsoDate(end);
 
@@ -128,11 +145,18 @@ export default function Booking() {
     [groupedSlots]
   );
 
-  const calendarBaseDate = useMemo(() => {
-    if (selectedDate) return new Date(`${selectedDate}T12:00:00`);
-    if (availableDates.length > 0) return new Date(`${availableDates[0]}T12:00:00`);
-    return new Date();
-  }, [availableDates, selectedDate]);
+  const datesInVisibleMonth = useMemo(
+    () =>
+      availableDates.filter((date) =>
+        isSameMonth(date, visibleMonth.year, visibleMonth.month)
+      ),
+    [availableDates, visibleMonth]
+  );
+
+  const calendarBaseDate = useMemo(
+    () => new Date(visibleMonth.year, visibleMonth.month, 1),
+    [visibleMonth]
+  );
 
   const monthLabel = useMemo(
     () =>
@@ -141,6 +165,26 @@ export default function Booking() {
       ),
     [calendarBaseDate]
   );
+
+  const canGoPrevMonth = useMemo(() => {
+    const now = new Date();
+    const current = startOfMonth(now.getFullYear(), now.getMonth());
+    const visible = startOfMonth(visibleMonth.year, visibleMonth.month);
+    return visible > current;
+  }, [visibleMonth]);
+
+  const canGoNextMonth = useMemo(() => {
+    const windowEnd = addDays(new Date(), BOOKING_DAYS_AHEAD);
+    const nextMonthStart = startOfMonth(visibleMonth.year, visibleMonth.month + 1);
+    return nextMonthStart <= windowEnd;
+  }, [visibleMonth]);
+
+  const shiftMonth = (delta: number) => {
+    setVisibleMonth((current) => {
+      const next = startOfMonth(current.year, current.month + delta);
+      return {year: next.getFullYear(), month: next.getMonth()};
+    });
+  };
 
   const calendarDays = useMemo(() => {
     const year = calendarBaseDate.getFullYear();
@@ -245,8 +289,9 @@ export default function Booking() {
           <div className="booking-hero-text">
             <h2>Online-Termin buchen</h2>
             <p>
-              Wähle deinen Wunschtermin und erhalte sofort die Bestätigung. Ich
-              melde mich bei dir, falls eine Alternative nötig ist.
+              Wähle deinen Wunschtermin bis zu drei Monate im Voraus und erhalte
+              sofort die Bestätigung. Ich melde mich bei dir, falls eine
+              Alternative nötig ist.
             </p>
           </div>
           <div className="booking-hero-image">
@@ -344,7 +389,27 @@ export default function Booking() {
           ) : (
             <>
           <div className="booking-calendar-panel">
-            <div className="booking-calendar-month">{monthLabel}</div>
+            <div className="booking-calendar-month-row">
+              <button
+                type="button"
+                className="booking-calendar-nav"
+                onClick={() => shiftMonth(-1)}
+                disabled={!canGoPrevMonth}
+                aria-label="Vorheriger Monat"
+              >
+                ‹
+              </button>
+              <div className="booking-calendar-month">{monthLabel}</div>
+              <button
+                type="button"
+                className="booking-calendar-nav"
+                onClick={() => shiftMonth(1)}
+                disabled={!canGoNextMonth}
+                aria-label="Nächster Monat"
+              >
+                ›
+              </button>
+            </div>
             <div className="booking-calendar-weekdays">
               {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((d) => (
                 <span key={d}>{d}</span>
@@ -374,7 +439,7 @@ export default function Booking() {
           </div>
 
           <div className="booking-date-row">
-            {availableDates.map((date) => (
+            {datesInVisibleMonth.map((date) => (
               <button
                 key={date}
                 type="button"

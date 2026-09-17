@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {MASSAGE_OPTIONS} from "../data/massageTypes";
-import {API_URL} from "../api/config";
+import {API_URL, BOOKING_DAYS_AHEAD} from "../api/config";
 import {
   ADMIN_STORAGE_KEY,
   getAdminHeaders,
@@ -232,7 +232,7 @@ export default function Admin() {
     setSlotsLoading(true);
     const start = new Date();
     const end = new Date();
-    end.setDate(start.getDate() + 13);
+    end.setDate(start.getDate() + BOOKING_DAYS_AHEAD);
     const startIso = toLocalIsoDate(start);
     const endIso = toLocalIsoDate(end);
     try {

@@ -1353,10 +1353,45 @@
   gap: 0.8rem;
 }
 
+.booking-calendar-month-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .booking-calendar-month {
   font-weight: 600;
   color: #5f4a34;
   text-transform: capitalize;
+  text-align: center;
+  flex: 1;
+}
+
+.booking-calendar-nav {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e6d6c6;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #5f4a34;
+  font-size: 1.4rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.booking-calendar-nav:hover:not(:disabled) {
+  border-color: #b89263;
+  color: #8a6a42;
+  background: #fcf7f2;
+}
+
+.booking-calendar-nav:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .booking-calendar-weekdays {
