@@ -1,3 +1,15 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 .app {
   --header-height: 126px;
   min-height: 100vh;
@@ -2266,12 +2278,81 @@
 
   .booking-hero,
   .booking-form-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .booking-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     padding: 1.4rem 1.1rem 1.8rem;
     border-radius: 20px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .booking-card > *,
+  .booking-form-grid > *,
+  .booking-calendar-container > *,
+  .booking-hero > * {
+    min-width: 0;
+  }
+
+  .booking-form-container,
+  .booking-calendar-container,
+  .booking-calendar-panel {
+    min-width: 0;
+    max-width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .booking-form-grid label,
+  .booking-form-grid input,
+  .booking-massage-select {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .booking-calendar-weekdays,
+  .booking-calendar-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .booking-calendar-day {
+    min-width: 0;
+  }
+
+  .booking-date-row {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .booking-submit-row {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .booking-privacy-consent {
+    width: 100%;
+    max-width: 100%;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .booking-privacy-consent,
+  .booking-privacy-consent span {
+    white-space: normal;
+  }
+
+  .booking-privacy-consent input {
+    flex-shrink: 0;
+  }
+
+  .booking-privacy-consent span {
+    min-width: 0;
   }
 
   .booking-hero {
@@ -2280,12 +2361,23 @@
 
   .topbar {
     flex-wrap: nowrap;
+    min-width: 0;
+    max-width: 100%;
     padding: 0.35rem 4vw;
     gap: 0.55rem;
   }
 
+  .brand {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
   .brand-logo {
     height: 56px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    object-position: left center;
   }
 
   .menu-toggle {
@@ -2394,9 +2486,28 @@
     height: 300px;
   }
 
+  .footer,
+  .footer-inner,
+  .footer-contact,
+  .footer-contact-item,
+  .footer-legal {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .footer-inner {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1.5rem;
+  }
+
+  .footer-contact a,
+  .footer-brand span,
+  .footer-legal {
+    overflow-wrap: anywhere;
+  }
+
+  .footer-legal {
+    flex-wrap: wrap;
   }
 
   .review-form-row {
@@ -2432,6 +2543,128 @@
 
   .admin-span-2 {
     grid-column: span 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .booking-page.page {
+    padding: 1.5rem 4vw;
+  }
+
+  .booking-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 1rem;
+    gap: 1.2rem;
+    border-radius: 20px;
+  }
+
+  .booking-card > *,
+  .booking-form-grid > *,
+  .booking-calendar-container > * {
+    min-width: 0;
+  }
+
+  .booking-hero {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .booking-hero-image {
+    height: 160px;
+    width: 100%;
+  }
+
+  .booking-form-container,
+  .booking-calendar-container {
+    padding: 1rem;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .booking-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .booking-form-grid label,
+  .booking-form-grid input,
+  .booking-massage-select {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .booking-calendar-panel {
+    padding: 0.6rem;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .booking-calendar-weekdays,
+  .booking-calendar-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.25rem;
+  }
+
+  .booking-calendar-day {
+    min-width: 0;
+    padding: 0.5rem 0;
+    font-size: 0.8rem;
+  }
+
+  .booking-date-row {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    grid-auto-columns: 56px;
+  }
+
+  .booking-date-button {
+    min-width: 0;
+  }
+
+  .booking-time-section,
+  .booking-time-grid {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .booking-time-grid {
+    grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+  }
+
+  .booking-submit-row {
+    padding: 0;
+    width: 100%;
+    max-width: 100%;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .booking-privacy-consent {
+    width: 100%;
+    max-width: 100%;
+    align-items: flex-start;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .booking-privacy-consent input {
+    flex-shrink: 0;
+  }
+
+  .booking-privacy-consent span {
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .booking-submit-button {
+    width: 100%;
   }
 }
 
